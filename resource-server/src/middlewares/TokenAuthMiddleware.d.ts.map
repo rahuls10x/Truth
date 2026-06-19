@@ -1,0 +1,1 @@
+{"version":3,"file":"TokenAuthMiddleware.d.ts","sourceRoot":"","sources":["TokenAuthMiddleware.ts"],"names":[],"mappings":"AAAA,OAAO,KAAK,EAAmC,cAAc,EAAE,MAAM,SAAS,CAAC;AAC/E,OAAO,KAAK,eAAe,MAAM,oCAAoC,CAAC;AAGtE,MAAM,CAAC,OAAO,OAAO,mBAAmB;IACpC,OAAO,CAAC,eAAe,CAAiB;gBAE5B,eAAe,EAAC,eAAe;IAI3C;;;;;;;;;;;;;;;;;;;OAmBG;IACH,iBAAiB,EAAG,cAAc,CAmBjC;CACJ"}

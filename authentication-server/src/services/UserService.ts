@@ -1,0 +1,88 @@
+import type UserRepository from "../repositories/UserRepository.js";
+import type { ProfilePayload, UpdateProfileBody } from "../types/index.js";
+import { strictCheck } from "../utils/ApplicationError.js";
+import CryptoService from "./CryptoService.js";
+import type { User } from "../types/dbSchema.js";
+
+export default class UserService {
+	private userRepository:UserRepository;
+
+	constructor(userRepository: UserRepository) {
+		this.userRepository = userRepository;
+	}
+
+	/**
+	 * Handles user signup
+	 * 
+	 * Inorder Flow:
+	 * - Check if user already exists (by email)
+	 * - create user object (password hashing also done here)
+	 * - create user and verify user creation
+	 * - return true (will not reach here if any of the above step causes error)
+	 * 
+	 * @refinement
+	 * implement otp veirfication system
+	 */
+	async signup({ name, email, password }: { name: string; email: string; password: string }):Promise<true> {
+		
+		strictCheck(!await this.userRepository.checkEmailExists(email), 409, "User already exists");
+
+		const userObject:User = {
+			userId:CryptoService.generateUserId(),
+			name,
+			email,
+			password: await CryptoService.hashPassword(password),
+			isVerified:false /// implement email verification later
+		}
+		
+		strictCheck(await this.userRepository.createUser(userObject), 500, "Internal Server Error");
+
+		return true;
+	}
+
+	/**
+	 * Provides User profile details DTO 
+	 * 
+	 * Inorder Flow:
+	 * - Get user details by id and check if user exists
+	 * - Construct user payload
+	 * - Return user payload
+	 * 
+	 * @remarks Payload contains name, email, age, gender
+	 */
+	async getProfile(userId:string): Promise<ProfilePayload> {
+
+		const user = strictCheck(await this.userRepository.getUserById(userId), 400,  "User not found");
+
+		const profilePayload = {
+			name:user.name,
+			email:user.email,
+			age:user.age ?? -1,
+			gender:user.gender ?? 'Prefer not to say'
+		}
+
+		return profilePayload;
+	}
+
+	/**
+	 * Update user profile details
+	 * 
+	 * Inorder Flow:
+	 * - Retrieve userId and update data from updateBody
+	 * - Update user details by userId
+	 * 
+	 * @remarks Overwrites existing user details
+	 */
+	async updateProfile(updateBody: UpdateProfileBody):Promise<void>{
+
+		const userId = updateBody.userId;
+		const updateData = {
+			name:updateBody.name,
+			email:updateBody.email,
+			age:updateBody.age,
+			gender:updateBody.gender
+		}
+
+		strictCheck(await this.userRepository.updateUserById(userId, updateData), 500, "Internal Server Error");
+	}
+}

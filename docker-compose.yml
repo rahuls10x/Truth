@@ -1,0 +1,51 @@
+services:
+  frontend-server:
+    build:
+      context: ./frontend-server
+      args:
+        VITE_API_URL: http://localhost:4000
+    ports:
+      - "5173:80"
+    depends_on:
+      - authentication-server
+      - resource-server
+
+  authentication-server:
+    build: ./authentication-server
+    ports:
+      - "4000:4000"
+    environment:
+      ORIGIN_URL: http://localhost:5173
+      MONGO_DB: mongodb://mongo:27017
+      REDIS_DB: redis://redis:6379
+      PORT: 4000
+    depends_on:
+      - mongo
+      - redis
+
+  resource-server:
+    build: ./resource-server
+    ports:
+      - "5000:5000"
+    environment:
+      MONGO_DB: mongodb://mongo:27017
+      REDIS_DB: redis://redis:6379
+      PORT: 5000
+    depends_on:
+      - mongo
+      - redis
+
+  mongo:
+    image: mongo:8
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+
+  redis:
+    image: redis:8
+    ports:
+      - "6379:6379"
+
+volumes:
+  mongo-data:
