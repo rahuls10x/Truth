@@ -1,5 +1,7 @@
+import Logo from "@/assets/Logo";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { ButtonGroup } from "@/components/ui/button-group";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { APP_ROUTES } from "@/config/routes";
@@ -19,27 +21,7 @@ import { useState, type ComponentProps, type ReactNode } from "react";
 import { useForm } from "react-hook-form";
 import { Link } from "react-router-dom";
 
-interface AuthCardProps {
-	title: string;
-	description: string;
-	children: ReactNode;
-	footer: ReactNode;
-}
-
-function AuthCard({ title, description, children, footer }: AuthCardProps) {
-	return (
-		<main className="flex min-h-dvh items-center justify-center p-4">
-			<Card className="w-full max-w-md">
-				<CardHeader className="text-center">
-					<CardTitle className="text-xl">{title}</CardTitle>
-					<CardDescription>{description}</CardDescription>
-				</CardHeader>
-				<CardContent>{children}</CardContent>
-				<CardFooter className="justify-center text-sm text-muted-foreground">{footer}</CardFooter>
-			</Card>
-		</main>
-	);
-}
+// Smaller shared components
 
 interface PasswordFieldProps extends Omit<ComponentProps<typeof Input>, "type"> {
 	label: string;
@@ -52,19 +34,24 @@ function PasswordField({ id, label, error, ...props }: PasswordFieldProps) {
 	return (
 		<Field data-invalid={Boolean(error)}>
 			<FieldLabel htmlFor={id}>{label}</FieldLabel>
-			<div className="relative">
-				<Input id={id} type={isVisible ? "text" : "password"} aria-invalid={Boolean(error)} className="pr-10" {...props} />
+			<ButtonGroup className="focus-within:border-ring focus-within:ring-3 focus-within:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40 rounded-lg">
+				<Input
+					id={id}
+					type={isVisible ? "text" : "password"}
+					aria-invalid={Boolean(error)}
+					className="pr-10 outline-none focus-visible:ring-0"
+					{...props}
+				/>
 				<Button
 					type="button"
-					variant="ghost"
-					size="icon-sm"
-					className="absolute right-1 top-1/2 -translate-y-1/2"
+					variant="outline"
+					className=""
 					onClick={() => setIsVisible(current => !current)}
 					aria-label={isVisible ? "Hide password" : "Show password"}
 				>
 					{isVisible ? <EyeOffIcon /> : <EyeIcon />}
 				</Button>
-			</div>
+			</ButtonGroup>
 			<FieldError>{error}</FieldError>
 		</Field>
 	);
@@ -72,14 +59,69 @@ function PasswordField({ id, label, error, ...props }: PasswordFieldProps) {
 
 function SubmitButton({ isSubmitting, label }: { isSubmitting: boolean; label: string }) {
 	return (
-		<Button type="submit" disabled={isSubmitting}>
+		<Button type="submit" disabled={isSubmitting} className="font-button font-semibold">
 			{isSubmitting && <LoaderCircleIcon className="animate-spin" />}
 			{isSubmitting ? "Please wait" : label}
 		</Button>
 	);
 }
 
+function Grow({ children }: { children?: ReactNode }) {
+	return <div className="grow">{children}</div>;
+}
+//Main layout
+interface AuthInterfaceProps {
+	title: string;
+	description: string;
+	children: ReactNode;
+	footer: ReactNode;
+}
 
+function AuthInterface({ title, description, children, footer }: AuthInterfaceProps) {
+	return (
+		<main className="flex bg-[url('/backgrounds/authPageBackground.png')] bg-no-repeat bg-cover h-dvh items-center justify-center p-4">
+			<div className="max-w-md w-14/15 md:max-w-none md:h-9/10 h-14/15 md:max-h-none outline-1 bg-background overflow-y-hidden rounded-2xl flex p-2 gap-2">
+				<div className="bg-[url('/backgrounds/authPageBackground.png')] w-1/2 bg-no-repeat bg-fixed bg-cover rounded-2xl p-8 md:flex md:flex-col hidden ">
+					<h1 className="text-xl font-heading font-semibold text-muted">── Secure Identity Provider</h1>
+					<Grow />
+					<p className="font-text text-background">
+						<span className="xl:text-6xl lg:text-4xl md:text-3xl font-bold block xl:w-9/10 lg:w-8/10">
+							We value your <span className="bg-clip-text bg-linear-to-r from-background to-primary/80  text-transparent">Privacy</span>{" "}
+							above all
+						</span>{" "}
+						<br />
+						<br />
+						<span className="xl:text-xl lg:text-base md:text-xs">No unauthorized data ever leaves our ecosystem.</span>
+					</p>
+					<p className="font-text italic text-background xl:text-base lg:text-sm md:text-xs">
+						It's all Open-Source -{" "}
+						<a href="https://github.com/rahuls10x/Truth" className="underline font-link">
+							Github
+						</a>
+					</p>
+				</div>
+				<div className="md:w-1/2 w-full h-full flex flex-col items-center overflow-hidden">
+					<div className="flex min-h-8 mt-4 gap-1.5 bg-clip-text bg-linear-to-r from-primary to-primary/70 text-transparent">
+						<span className="text-lg font-heading font-extrabold">Truth</span>
+						<Logo className="w-6 h-6 text-primary mt-1" />
+					</div>
+					<Grow />
+					<Card className="w-full max-w-sm min-h-94 bg-transparent ring-0 overflow-y-scroll scrollbar-none">
+						<CardHeader>
+							<CardTitle className="font-heading font-semibold text-center text-2xl">{title}</CardTitle>
+							<CardDescription className="text-center md:text-lg text-base font-subheading font-light">{description}</CardDescription>
+						</CardHeader>
+						<CardContent className="bg-transparent md:w-4/5 md:m-auto m-1.5">{children}</CardContent>
+					</Card>
+					<Grow />
+					<div className="mb-4 min-h-10 p-2">{footer}</div>
+				</div>
+			</div>
+		</main>
+	);
+}
+
+//Components
 function LoginPage({ entityType }: { entityType: EntityType }) {
 	const auth = useAuth();
 	const isUser = entityType === "user";
@@ -95,14 +137,16 @@ function LoginPage({ entityType }: { entityType: EntityType }) {
 		defaultValues: { email: "", password: "" },
 	});
 
-
 	return (
-		<AuthCard
-			title={`${isUser ? "User" : "Organization"} login`}
-			description="Enter your credentials to continue to the portal."
+		<AuthInterface
+			title={`Welcome back, ${isUser ? "User" : "Organization"}`}
+			description="Please enter your credentials"
 			footer={
 				<span>
-					Need an account? <Link className="font-medium text-foreground underline-offset-4 hover:underline" to={signupPath}>Sign up</Link>
+					Need an account?{" "}
+					<Link className="font-medium text-foreground underline-offset-4 hover:underline" to={signupPath}>
+						Sign up
+					</Link>
 				</span>
 			}
 		>
@@ -127,15 +171,16 @@ function LoginPage({ entityType }: { entityType: EntityType }) {
 						{...register("password")}
 					/>
 					<SubmitButton isSubmitting={isSubmitting} label="Login" />
-					<Button variant="ghost" asChild>
-						<Link to={alternateLoginPath}>Use {isUser ? "organization" : "user"} login</Link>
+					<Button variant={"ghost"} asChild>
+						<Link to={alternateLoginPath}>{isUser ? "Organization" : "User"} Login</Link>
 					</Button>
 				</FieldGroup>
 			</form>
-		</AuthCard>
+		</AuthInterface>
 	);
 }
 
+//Pages
 export function UserLoginPage() {
 	return <LoginPage entityType="user" />;
 }
@@ -156,29 +201,46 @@ export function UserSignupPage() {
 	});
 
 	return (
-		<AuthCard
+		<AuthInterface
 			title="Create a user account"
-			description="Register your details to access the user portal."
-			footer={<span>Already registered? <Link className="font-medium text-foreground underline-offset-4 hover:underline" to={APP_ROUTES.user.login}>Log in</Link></span>}
+			description="Register your details below"
+			footer={
+				<span>
+					Already registered?{" "}
+					<Link className="font-medium text-foreground underline-offset-4 hover:underline" to={APP_ROUTES.user.login}>
+						Log in
+					</Link>
+				</span>
+			}
 		>
 			<form onSubmit={handleSubmit(userSignup)} noValidate>
 				<FieldGroup>
 					<Field data-invalid={Boolean(errors.name)}>
-						<FieldLabel htmlFor="user-signup-name">Full name</FieldLabel>
-						<Input id="user-signup-name" autoComplete="name" aria-invalid={Boolean(errors.name)} {...register("name")} />
+						<FieldLabel htmlFor="name">Full name</FieldLabel>
+						<Input id="name" autoComplete="name" aria-invalid={Boolean(errors.name)} {...register("name")} />
 						<FieldError>{errors.name?.message}</FieldError>
 					</Field>
 					<Field data-invalid={Boolean(errors.email)}>
-						<FieldLabel htmlFor="user-signup-email">Email</FieldLabel>
-						<Input id="user-signup-email" type="email" autoComplete="email" aria-invalid={Boolean(errors.email)} {...register("email")} />
+						<FieldLabel htmlFor="email">Email</FieldLabel>
+						<Input id="email" type="email" autoComplete="email" aria-invalid={Boolean(errors.email)} {...register("email")} />
 						<FieldError>{errors.email?.message}</FieldError>
 					</Field>
-					<PasswordField id="user-signup-password" label="Password" autoComplete="new-password" error={errors.password?.message} {...register("password")} />
-					<PasswordField id="user-signup-confirm-password" label="Confirm password" autoComplete="new-password" error={errors.confirmPassword?.message} {...register("confirmPassword")} />
+					<PasswordField
+						id="password"
+						label="Password"
+						autoComplete="new-password"
+						error={errors.password?.message}
+						{...register("password")}
+					/>
+					<Field>
+						<FieldLabel htmlFor="confirm-password">Confirm password</FieldLabel>
+						<Input id="confirm-password" type="password" {...register("confirmPassword")} />
+						<FieldError>{errors.confirmPassword?.message}</FieldError>
+					</Field>
 					<SubmitButton isSubmitting={isSubmitting} label="Create account" />
 				</FieldGroup>
 			</form>
-		</AuthCard>
+		</AuthInterface>
 	);
 }
 
@@ -194,21 +256,33 @@ export function OrganizationSignupPage() {
 	});
 
 	return (
-		<AuthCard
+		<AuthInterface
 			title="Create an organization"
-			description="Register your organization and administrator account."
-			footer={<span>Already registered? <Link className="font-medium text-foreground underline-offset-4 hover:underline" to={APP_ROUTES.organization.login}>Log in</Link></span>}
+			description="Register your details below"
+			footer={
+				<span>
+					Already registered?{" "}
+					<Link className="font-medium text-foreground underline-offset-4 hover:underline" to={APP_ROUTES.organization.login}>
+						Log in
+					</Link>
+				</span>
+			}
 		>
 			<form onSubmit={handleSubmit(organizationSignup)} noValidate>
 				<FieldGroup>
 					<Field data-invalid={Boolean(errors.userName)}>
-						<FieldLabel htmlFor="organization-signup-name">Administrator name</FieldLabel>
-						<Input id="organization-signup-name" autoComplete="name" aria-invalid={Boolean(errors.userName)} {...register("userName")} />
+						<FieldLabel htmlFor="name">Administrator name</FieldLabel>
+						<Input id="name" autoComplete="name" aria-invalid={Boolean(errors.userName)} {...register("userName")} />
 						<FieldError>{errors.userName?.message}</FieldError>
 					</Field>
 					<Field data-invalid={Boolean(errors.organizationName)}>
 						<FieldLabel htmlFor="organization-name">Organization name</FieldLabel>
-						<Input id="organization-name" autoComplete="organization" aria-invalid={Boolean(errors.organizationName)} {...register("organizationName")} />
+						<Input
+							id="organization-name"
+							autoComplete="organization"
+							aria-invalid={Boolean(errors.organizationName)}
+							{...register("organizationName")}
+						/>
 						<FieldError>{errors.organizationName?.message}</FieldError>
 					</Field>
 					<Field data-invalid={Boolean(errors.domain)}>
@@ -217,15 +291,32 @@ export function OrganizationSignupPage() {
 						<FieldError>{errors.domain?.message}</FieldError>
 					</Field>
 					<Field data-invalid={Boolean(errors.email)}>
-						<FieldLabel htmlFor="organization-signup-email">Administrator email</FieldLabel>
-						<Input id="organization-signup-email" type="email" autoComplete="email" aria-invalid={Boolean(errors.email)} {...register("email")} />
+						<FieldLabel htmlFor="email">Administrator email</FieldLabel>
+						<Input
+							id="email"
+							type="email"
+							autoComplete="email"
+							aria-invalid={Boolean(errors.email)}
+							{...register("email")}
+						/>
 						<FieldError>{errors.email?.message}</FieldError>
 					</Field>
-					<PasswordField id="organization-signup-password" label="Password" autoComplete="new-password" error={errors.password?.message} {...register("password")} />
-					<PasswordField id="organization-signup-confirm-password" label="Confirm password" autoComplete="new-password" error={errors.confirmPassword?.message} {...register("confirmPassword")} />
+					<PasswordField
+						id="password"
+						label="Password"
+						autoComplete="new-password"
+						error={errors.password?.message}
+						{...register("password")}
+					/>
+					<Field>
+						<FieldLabel htmlFor="confirm-password">Confirm password</FieldLabel>
+						<Input id="confirm-password" type="password" {...register("confirmPassword")} />
+						<FieldError>{errors.confirmPassword?.message}</FieldError>
+					</Field>
+
 					<SubmitButton isSubmitting={isSubmitting} label="Create organization" />
 				</FieldGroup>
 			</form>
-		</AuthCard>
+		</AuthInterface>
 	);
 }
