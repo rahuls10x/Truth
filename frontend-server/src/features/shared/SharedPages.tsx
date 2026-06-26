@@ -8,10 +8,11 @@ export function ComingSoonPage() {
 	return (
 		<>
 			<div className="h-[80dvh] flex items-center justify-center rounded-xl md:min-h-min">
-				<Card>
-					<CardHeader className="text-2xl text-center">Coming Soon</CardHeader>
-					<CardContent>
-						Application is being constantly updated. Hold tight!
+				<Card className="text-accent-foreground bg-accent">
+					<CardHeader className="text-xl md:text-2xl text-center font-subheading font-bold">Coming Soon</CardHeader>
+					<CardContent className="text-base md:text-lg font-text text-center">
+						Application is being constantly updated. <br />
+						Hold tight!
 					</CardContent>
 				</Card>
 			</div>
@@ -22,13 +23,13 @@ export function ComingSoonPage() {
 export function NotFoundPage() {
 	return (
 		<main className="flex min-h-dvh items-center justify-center p-4">
-			<Card className="w-full max-w-md text-center">
+			<Card className="w-full max-w-md text-center bg-accent text-accent-foreground">
 				<CardHeader>
-					<CardTitle>Page not found</CardTitle>
-					<CardDescription>The page you requested does not exist.</CardDescription>
+					<CardTitle className="font-heading text-2xl">Page not found</CardTitle>
+					<CardDescription className="font-subheading text-base text-muted-foreground">The page you requested does not exist.</CardDescription>
 				</CardHeader>
 				<CardFooter className="justify-center">
-					<Button asChild><Link to={APP_ROUTES.root}>Return home</Link></Button>
+					<Button asChild><Link to={APP_ROUTES.root}>Return Home</Link></Button>
 				</CardFooter>
 			</Card>
 		</main>

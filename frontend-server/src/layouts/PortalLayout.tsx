@@ -24,7 +24,7 @@ export default function PortalLayout({ entity }: { entity: EntityType }) {
 						<div className="flex items-center gap-2 px-4">
 							<SidebarTrigger className="-ml-1" />
 							<Separator orientation="vertical" className="mr-2 data-[orientation=vertical]:h-4" />
-							<h1 className="text-sm font-medium">{getPageTitle(location.pathname)}</h1>
+							<h1 className="text-sm font-heading font-semibold">{getPageTitle(location.pathname)}</h1>
 						</div>
 					</header>
 					<ScrollArea className="h-[calc(100dvh-4rem)]">

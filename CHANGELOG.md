@@ -13,12 +13,15 @@ The Following rules must be followed at all times
 ## dev[1.0.1] - [??]
 
 ### Added
-- Improvised the Auth Pages UI
-- Improved the Responsiveness of the Auth Pages ( For all devices)
+- Added initial release documentation with proper structure ( `CHANGELOG.md` and `RELEASE_NOTES.md`)
+
+### Changed
+- Improvised the Auth & Shared Pages UI
+- Improved the Responsiveness of the Auth Pages ( For all devices), Shared Pages
 - Implemented a Clearer and Consistent theming (Light & Dark)
 - Implemented a set of Fonts (Google sans, Google sans Italic and Quicksand)
 - Updated the Logo of the Application
-- Added initial release documentation with proper structure ( `CHANGELOG.md` and `RELEASE_NOTES.md`)
+
 
 ## dev[1.0.0] - [19-06-26]
 

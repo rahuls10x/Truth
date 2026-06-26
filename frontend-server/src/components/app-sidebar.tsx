@@ -13,8 +13,10 @@ import {
 import { APP_ROUTES, getPortalRoute } from "@/config/routes";
 import { useAuth } from "@/contexts/AuthContext";
 import type { EntityType } from "@/types";
-import { AudioLinesIcon, Blocks, UsersRound } from "lucide-react";
+import { Blocks, UsersRound } from "lucide-react";
 import { Link, NavLink, useLocation } from "react-router-dom";
+import { Separator } from "./ui/separator";
+import Logo from "@/assets/Logo";
 
 export function AppSidebar({ entity, ...props }: { entity: EntityType }) {
 	const { entity: entityDetails } = useAuth();
@@ -30,12 +32,12 @@ export function AppSidebar({ entity, ...props }: { entity: EntityType }) {
 			<SidebarHeader>
 				<SidebarMenu>
 					<SidebarMenuItem>
-						<SidebarMenuButton size="lg" asChild>
+						<SidebarMenuButton size="lg" className="active:bg-transparent hover:bg-transparent" asChild>
 							<Link to={getPortalRoute(entity)}>
-								<div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
-									<AudioLinesIcon className="size-4" />
+								<div className="flex items-center justify-center rounded-lg bg-transparent gap-1 ml-1">
+									<Logo className="size-6.5! text-primary/90" />
+									<span className="truncate font-heading text-primary font-bold text-lg">Truth</span>
 								</div>
-								<span className="truncate font-semibold">Truth</span>
 							</Link>
 						</SidebarMenuButton>
 					</SidebarMenuItem>
@@ -46,9 +48,9 @@ export function AppSidebar({ entity, ...props }: { entity: EntityType }) {
 					<SidebarMenu>
 						{navItems.map(item => (
 							<SidebarMenuItem key={item.url}>
-								<SidebarMenuButton isActive={location.pathname === item.url} tooltip={item.title} asChild>
+								<SidebarMenuButton isActive={location.pathname === item.url} tooltip={item.title} className="text-base font-button" asChild>
 									<NavLink to={item.url}>
-										<item.icon />
+										<item.icon className="text-semibold" />
 										<span>{item.title}</span>
 									</NavLink>
 								</SidebarMenuButton>
@@ -57,6 +59,7 @@ export function AppSidebar({ entity, ...props }: { entity: EntityType }) {
 					</SidebarMenu>
 				</SidebarGroup>
 			</SidebarContent>
+			<Separator/>
 			<SidebarFooter>
 				<NavEntity
 					entity={{

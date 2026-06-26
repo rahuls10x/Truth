@@ -44,7 +44,7 @@ export function NavEntity({ entity }: NavEntityProps) {
 			<SidebarMenuItem>
 				<DropdownMenu>
 					<DropdownMenuTrigger asChild>
-						<SidebarMenuButton size="lg" className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground">
+						<SidebarMenuButton size="lg" className="hover:bg-accent data-[state=open]:bg-accent data-[state=open]:text-accent-foreground">
 							<Avatar className="h-8 w-8 rounded-lg">
 								<AvatarImage src={entity.avatar} alt="" />
 								<AvatarFallback className="rounded-lg">{getInitials(entity.name)}</AvatarFallback>
