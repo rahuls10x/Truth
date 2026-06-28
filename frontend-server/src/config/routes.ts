@@ -6,8 +6,7 @@ export const APP_ROUTES = {
 	user: {
 		login: "/user/login",
 		signup: "/user/signup",
-		portal: "/user/portal",
-		profile: "/user/portal/profile",
+		portal: "/user/portal"
 	},
 	organization: {
 		login: "/org/login",

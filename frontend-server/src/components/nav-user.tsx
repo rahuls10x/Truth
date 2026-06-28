@@ -12,32 +12,31 @@ import { SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar } from "@/c
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { BadgeCheckIcon, ChevronsUpDownIcon, LogOutIcon, MoonIcon, SunIcon } from "lucide-react";
-import { Link } from "react-router-dom";
+import { ProfilePage } from "@/features/user/Userpages";
 
 interface NavEntityProps {
 	entity: {
 		name: string;
 		email: string;
 		avatar: string;
-		action: string;
-		actionLabel: string;
 	};
 }
 
 function getInitials(name: string): string {
-	return name
-		.split(/\s+/)
-		.filter(Boolean)
-		.slice(0, 2)
-		.map(part => part[0]?.toUpperCase())
-		.join("") || "TR";
+	return (
+		name
+			.split(/\s+/)
+			.filter(Boolean)
+			.slice(0, 2)
+			.map(part => part[0]?.toUpperCase())
+			.join("") || "TR"
+	);
 }
 
 export function NavEntity({ entity }: NavEntityProps) {
 	const { isMobile } = useSidebar();
 	const { logout } = useAuth();
 	const { theme, toggleTheme } = useTheme();
-
 
 	return (
 		<SidebarMenu>
@@ -63,12 +62,7 @@ export function NavEntity({ entity }: NavEntityProps) {
 						</DropdownMenuLabel>
 						<DropdownMenuSeparator />
 						<DropdownMenuGroup>
-							<DropdownMenuItem asChild>
-								<Link to={entity.action}>
-									<BadgeCheckIcon />
-									{entity.actionLabel}
-								</Link>
-							</DropdownMenuItem>
+							<ProfilePage icon={BadgeCheckIcon} text="Profile" />
 							<DropdownMenuItem onClick={toggleTheme}>
 								{theme === "dark" ? <SunIcon /> : <MoonIcon />}
 								{theme === "dark" ? "Light theme" : "Dark theme"}

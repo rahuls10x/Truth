@@ -13,7 +13,7 @@ import {
 import { APP_ROUTES, getPortalRoute } from "@/config/routes";
 import { useAuth } from "@/contexts/AuthContext";
 import type { EntityType } from "@/types";
-import { Blocks, UsersRound } from "lucide-react";
+import { Blocks } from "lucide-react";
 import { Link, NavLink, useLocation } from "react-router-dom";
 import { Separator } from "./ui/separator";
 import Logo from "@/assets/Logo";
@@ -23,9 +23,8 @@ export function AppSidebar({ entity, ...props }: { entity: EntityType }) {
 	const location = useLocation();
 	const navItems =
 		entity === "user"
-			? [{ title: "Profile settings", url: APP_ROUTES.user.profile, icon: UsersRound }]
+			? []
 			: [{ title: "Clients", url: APP_ROUTES.organization.clients, icon: Blocks }];
-	const accountAction = entity === "user" ? APP_ROUTES.user.profile : APP_ROUTES.organization.clients;
 
 	return (
 		<Sidebar collapsible="icon" {...props}>
@@ -65,9 +64,7 @@ export function AppSidebar({ entity, ...props }: { entity: EntityType }) {
 					entity={{
 						name: entityDetails?.name ?? "Unknown account",
 						email: entityDetails?.email ?? "",
-						avatar: "/avatars/hinata.jpg",
-						action: accountAction,
-						actionLabel: entity === "user" ? "Profile" : "Clients",
+						avatar: "/avatars/hinata.jpg"
 					}}
 				/>
 			</SidebarFooter>

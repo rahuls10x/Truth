@@ -4,6 +4,7 @@ import { APP_ROUTES } from "@/config/routes";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { NotificationProvider } from "@/contexts/NotificationContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
+import { ComingSoonPage } from "@/features/shared/SharedPages";
 import PortalLayout from "@/layouts/PortalLayout";
 import { lazy, Suspense } from "react";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
@@ -16,7 +17,6 @@ const OrganizationLoginPage = lazy(() => authPages().then(module => ({ default: 
 const UserSignupPage = lazy(() => authPages().then(module => ({ default: module.UserSignupPage })));
 const OrganizationSignupPage = lazy(() => authPages().then(module => ({ default: module.OrganizationSignupPage })));
 const ConsentPage = lazy(() => userPages().then(module => ({ default: module.ConsentPage })));
-const ProfilePage = lazy(() => userPages().then(module => ({ default: module.ProfilePage })));
 const ClientsPage = lazy(() => import("@/features/organization/OrganizationPages"));
 const NotFoundPage = lazy(() => import("@/features/shared/SharedPages").then(module => ({ default: module.NotFoundPage })));
 
@@ -36,8 +36,7 @@ function AppRoutes() {
 				<Route element={<ProtectedRoute entityType="user" />}>
 					<Route path={APP_ROUTES.consent} element={<ConsentPage />} />
 					<Route path={APP_ROUTES.user.portal} element={<PortalLayout entity="user" />}>
-						<Route index element={<Navigate to={APP_ROUTES.user.profile} replace />} />
-						<Route path="profile" element={<ProfilePage />} />
+						<Route index element={<ComingSoonPage/>} />
 					</Route>
 				</Route>
 

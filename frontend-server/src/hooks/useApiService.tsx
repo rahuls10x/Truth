@@ -10,11 +10,8 @@ export interface APIResponse{
 export default function useApiService(link: string) {
     const {error} = useNotification();
 
-    console.log(link);
-
     const makeRequest = async(type: "GET" | 'POST' | "DELETE" | "PUT" | "PATCH" , path:string, body?:any): Promise<APIResponse | undefined> =>{
         try {
-            console.log(link + "/" + path);
             const response = await fetch(path, {
                 method: type,
                 credentials: "include",

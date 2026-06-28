@@ -5,9 +5,9 @@ Any and all changes across all version are to be documented here. <br>
 The Following rules must be followed at all times 
 - It will be sorted in Descending version going from higher to lower versions. (For ex- `v.1.0.1` > `v.1.0.0`)
 - Changes should mentioned in all applicable categories. For ex- If a feature was modified and an old implementation was removed, document it under both `Changed` and `Removed`
-- Keep it consise here and for detailed version always refer to `RELEASE_NOTES.md`. (You will need to find the Release Notes file for that version in commit history as they will only contain notes for latest version at any given time)
+- Keep it concise here and for detailed version always refer to `RELEASE_NOTES.md`. (You will need to find the Release Notes file for that version in commit history as they will only contain notes for latest version at any given time)
 - All Titles must be in this format - `## versionType[version]- [dateOfReleaseInDD-MM-YY]`
-- All versions should be catergorized by the follwing metrics - `### Added | Removed | Changed | Fixed | Deprecated | Security`
+- All versions should be categorized by the following metrics - `### Added | Removed | Changed | Fixed | Deprecated | Security`
 - Rules might be updated so always refer to existing rules and adhere to them.( Worried about myself not following )
 
 ## dev[1.0.1] - [??]
@@ -16,7 +16,7 @@ The Following rules must be followed at all times
 - Added initial release documentation with proper structure ( `CHANGELOG.md` and `RELEASE_NOTES.md`)
 
 ### Changed
-- Improvised the Auth & Shared Pages UI
+- Improvised the Auth, User, Shared Pages UI
 - Improved the Responsiveness of the Auth Pages ( For all devices), Shared Pages
 - Implemented a Clearer and Consistent theming (Light & Dark)
 - Implemented a set of Fonts (Google sans, Google sans Italic and Quicksand)
