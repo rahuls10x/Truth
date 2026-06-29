@@ -16,8 +16,8 @@ The Following rules must be followed at all times
 - Added initial release documentation with proper structure ( `CHANGELOG.md` and `RELEASE_NOTES.md`)
 
 ### Changed
-- Improvised the Auth, User, Shared Pages UI
-- Improved the Responsiveness of the Auth Pages ( For all devices), Shared Pages
+- Improvised the Auth, User, Shared Pages UI, Organization Pages UI
+- Improved the Responsiveness of the Auth Pages ( For all devices), Shared Pages, Organization Pages
 - Implemented a Clearer and Consistent theming (Light & Dark)
 - Implemented a set of Fonts (Google sans, Google sans Italic and Quicksand)
 - Updated the Logo of the Application

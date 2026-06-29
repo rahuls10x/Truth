@@ -42,7 +42,7 @@ function AppRoutes() {
 
 				<Route element={<ProtectedRoute entityType="organization" />}>
 					<Route path={APP_ROUTES.organization.portal} element={<PortalLayout entity="organization" />}>
-						<Route index element={<Navigate to={APP_ROUTES.organization.clients} replace />} />
+						<Route index element={<ComingSoonPage />} />
 						<Route path="clients" element={<ClientsPage />} />
 					</Route>
 				</Route>

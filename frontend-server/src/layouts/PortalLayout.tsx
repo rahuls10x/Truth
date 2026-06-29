@@ -7,8 +7,7 @@ import type { EntityType } from "@/types";
 import { Outlet, useLocation } from "react-router-dom";
 
 function getPageTitle(pathname: string): string {
-	if (pathname.endsWith("/profile")) return "Profile settings";
-	if (pathname.endsWith("/clients")) return "OAuth clients";
+	if (pathname.endsWith("/clients")) return "OAuth Clients";
 	return "Portal";
 }
 

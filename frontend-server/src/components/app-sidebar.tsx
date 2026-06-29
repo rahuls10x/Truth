@@ -19,7 +19,7 @@ import { Separator } from "./ui/separator";
 import Logo from "@/assets/Logo";
 
 export function AppSidebar({ entity, ...props }: { entity: EntityType }) {
-	const { entity: entityDetails } = useAuth();
+	const { entity: entityDetails, entityType } = useAuth();
 	const location = useLocation();
 	const navItems =
 		entity === "user"
@@ -64,7 +64,8 @@ export function AppSidebar({ entity, ...props }: { entity: EntityType }) {
 					entity={{
 						name: entityDetails?.name ?? "Unknown account",
 						email: entityDetails?.email ?? "",
-						avatar: "/avatars/hinata.jpg"
+						avatar: "/avatars/hinata.jpg",
+						entityType:entityType
 					}}
 				/>
 			</SidebarFooter>

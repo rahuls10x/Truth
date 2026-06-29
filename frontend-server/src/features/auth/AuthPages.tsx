@@ -1,9 +1,9 @@
 import Logo from "@/assets/Logo";
 import { Button } from "@/components/ui/button";
-import { ButtonGroup } from "@/components/ui/button-group";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
 import { APP_ROUTES } from "@/config/routes";
 import { useAuth } from "@/contexts/AuthContext";
 import type { EntityType } from "@/types";
@@ -34,24 +34,22 @@ function PasswordField({ id, label, error, ...props }: PasswordFieldProps) {
 	return (
 		<Field data-invalid={Boolean(error)}>
 			<FieldLabel htmlFor={id}>{label}</FieldLabel>
-			<ButtonGroup className="focus-within:border-ring focus-within:ring-3 focus-within:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40 rounded-lg">
-				<Input
+			<InputGroup>
+				<InputGroupInput
 					id={id}
 					type={isVisible ? "text" : "password"}
 					aria-invalid={Boolean(error)}
 					className="pr-10 outline-none focus-visible:ring-0"
 					{...props}
 				/>
-				<Button
-					type="button"
-					variant="outline"
-					className=""
+				<InputGroupAddon
+					align={'inline-end'}
 					onClick={() => setIsVisible(current => !current)}
 					aria-label={isVisible ? "Hide password" : "Show password"}
 				>
 					{isVisible ? <EyeOffIcon /> : <EyeIcon />}
-				</Button>
-			</ButtonGroup>
+				</InputGroupAddon>
+			</InputGroup>
 			<FieldError>{error}</FieldError>
 		</Field>
 	);

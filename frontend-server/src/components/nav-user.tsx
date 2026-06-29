@@ -19,6 +19,7 @@ interface NavEntityProps {
 		name: string;
 		email: string;
 		avatar: string;
+		entityType:'user' | 'organization' | null
 	};
 }
 
@@ -62,7 +63,7 @@ export function NavEntity({ entity }: NavEntityProps) {
 						</DropdownMenuLabel>
 						<DropdownMenuSeparator />
 						<DropdownMenuGroup>
-							<ProfilePage icon={BadgeCheckIcon} text="Profile" />
+							{entity.entityType === 'user' && <ProfilePage icon={BadgeCheckIcon} text="Profile" />}
 							<DropdownMenuItem onClick={toggleTheme}>
 								{theme === "dark" ? <SunIcon /> : <MoonIcon />}
 								{theme === "dark" ? "Light theme" : "Dark theme"}
