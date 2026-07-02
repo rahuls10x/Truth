@@ -16,8 +16,8 @@ export function RouteLoadingScreen() {
 }
 
 export function PublicOnlyRoute() {
-	const { entityType , isAuthenticated } = useAuth();
-	if ( isAuthenticated && entityType) return <Navigate to={getPortalRoute(entityType)} replace />;
+	const { entityType , entity } = useAuth();
+	if ( entity && entityType) return <Navigate to={getPortalRoute(entityType)} replace />;
 
 	return <Outlet />;
 }
@@ -25,14 +25,17 @@ export function PublicOnlyRoute() {
 export function ProtectedRoute({ entityType }: { entityType: EntityType }) {
 	const auth = useAuth();
 	const location = useLocation();
+	
+	if(auth.isLoading) return <RouteLoadingScreen />
 
-	if (!auth.isAuthenticated || !auth.entityType) {
+	if (!auth.entity && !auth.entityType) {
 		return <Navigate to={getLoginRoute(entityType)} replace state={{ from: location }} />;
 	}
 
 	if (auth.entityType !== entityType) {
-		return <Navigate to={getPortalRoute(auth.entityType)} replace />;
+		return <Navigate to={getPortalRoute(auth.entityType!)} replace />;
 	}
 
 	return <Outlet />;
 }
+	

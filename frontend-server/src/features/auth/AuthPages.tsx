@@ -1,6 +1,6 @@
 import Logo from "@/assets/Logo";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
@@ -19,7 +19,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { EyeIcon, EyeOffIcon, LoaderCircleIcon } from "lucide-react";
 import { useState, type ComponentProps, type ReactNode } from "react";
 import { useForm } from "react-hook-form";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 
 // Smaller shared components
 
@@ -43,7 +43,7 @@ function PasswordField({ id, label, error, ...props }: PasswordFieldProps) {
 					{...props}
 				/>
 				<InputGroupAddon
-					align={'inline-end'}
+					align={"inline-end"}
 					onClick={() => setIsVisible(current => !current)}
 					aria-label={isVisible ? "Hide password" : "Show password"}
 				>
@@ -104,12 +104,12 @@ function AuthInterface({ title, description, children, footer }: AuthInterfacePr
 						<Logo className="w-6 h-6 text-primary mt-1" />
 					</div>
 					<Grow />
-					<Card className="w-full max-w-sm min-h-94 bg-transparent ring-0 overflow-y-scroll scrollbar-none">
+					<Card className="w-full max-w-sm md:max-w-md min-h-94 bg-transparent ring-0 overflow-y-scroll scrollbar-none">
 						<CardHeader>
 							<CardTitle className="font-heading font-semibold text-center text-2xl">{title}</CardTitle>
 							<CardDescription className="text-center md:text-lg text-base font-subheading font-light">{description}</CardDescription>
 						</CardHeader>
-						<CardContent className="bg-transparent md:w-4/5 md:m-auto m-1.5">{children}</CardContent>
+						<CardContent className="bg-transparent lg:w-4/5 h-full lg:m-auto  m-1.5">{children}</CardContent>
 					</Card>
 					<Grow />
 					<div className="mb-4 min-h-10 p-2">{footer}</div>
@@ -290,13 +290,7 @@ export function OrganizationSignupPage() {
 					</Field>
 					<Field data-invalid={Boolean(errors.email)}>
 						<FieldLabel htmlFor="email">Administrator email</FieldLabel>
-						<Input
-							id="email"
-							type="email"
-							autoComplete="email"
-							aria-invalid={Boolean(errors.email)}
-							{...register("email")}
-						/>
+						<Input id="email" type="email" autoComplete="email" aria-invalid={Boolean(errors.email)} {...register("email")} />
 						<FieldError>{errors.email?.message}</FieldError>
 					</Field>
 					<PasswordField
@@ -315,6 +309,89 @@ export function OrganizationSignupPage() {
 					<SubmitButton isSubmitting={isSubmitting} label="Create organization" />
 				</FieldGroup>
 			</form>
+		</AuthInterface>
+	);
+}
+
+export function ConsentPage() {
+	const [searchParams] = useSearchParams();
+	const clientId = searchParams.get("client_id");
+	const redirectUri = searchParams.get("redirect_uri");
+	const responseType = searchParams.get("response_type");
+	const challengeMethod = searchParams.get("challenge_method");
+	const code_challenge = searchParams.get("challenge_method");
+	const scopes = (searchParams.get("scopes") ?? "").trim().split(/\s+/).filter(Boolean);
+	const clientName = searchParams.get("client_name");
+
+	const { entity, consent } = useAuth();
+	const isValidRequest = Boolean(
+		clientId && clientName && redirectUri && responseType && challengeMethod === "S256" && code_challenge && scopes.length > 0,
+	);
+
+	function capitalizeInitials(text: string): string {
+		return text.charAt(0).toUpperCase() + text.slice(1);
+	}
+
+	async function handleConsent(isGranted: boolean) {
+		await consent(
+			{
+				consent: isGranted,
+				client_id: clientId ?? "",
+				scopes,
+			},
+			searchParams,
+		);
+	}
+
+	return (
+		<AuthInterface
+			title={`Authorize ${clientName ? capitalizeInitials(clientName ?? "") : 'nothing'}`}
+			description={isValidRequest ? "Only authorize clients you trust" : "Authorization request is incomplete or invalid"}
+			footer=""
+		>
+			<Card className="my-2">
+				<CardHeader>
+					<CardTitle>{entity?.name}</CardTitle>
+					<CardDescription>{entity?.email}</CardDescription>
+				</CardHeader>
+			</Card>
+
+			{!isValidRequest && (
+				<Card className="w-full max-w-md text-center bg-transparent">
+					<CardHeader>
+						<CardDescription className="font-subheading text-base text-muted-foreground">
+							Caught you! Trying funny things are we?
+						</CardDescription>
+					</CardHeader>
+					<CardContent>
+						<Button asChild>
+							<Link to={APP_ROUTES.root}>Return Home</Link>
+						</Button>
+					</CardContent>
+					
+				</Card>
+			)}
+
+			{isValidRequest && (
+				<Card className="bg-transparent ring-0">
+					<CardContent>
+						<h1 className="text-sm lg:text-base text-nowrap truncate">Third-party is requesting access to: </h1>
+						<ul className="list-disc list-inside mx-2 my-1">
+							{scopes.map(scope => (
+								<li key={scope}>{capitalizeInitials(scope)}</li>
+							))}
+						</ul>
+					</CardContent>
+					<CardFooter className="gap-3 bg-transparent">
+						<Button disabled={!isValidRequest} className="grow" onClick={() => void handleConsent(true)}>
+							Authorize
+						</Button>
+						<Button variant="outline" className="" disabled={!isValidRequest} onClick={() => void handleConsent(false)}>
+							Cancel
+						</Button>
+					</CardFooter>
+				</Card>
+			)}
 		</AuthInterface>
 	);
 }

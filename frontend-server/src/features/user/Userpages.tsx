@@ -1,18 +1,15 @@
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useApplication } from "@/contexts/ApplicationContext";
-import { useAuth } from "@/contexts/AuthContext";
 import { ProfileSchema, type ProfileSchema as ProfileValues } from "@/types/validation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { LoaderCircleIcon, type LucideIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
-import { useSearchParams } from "react-router-dom";
 
 function ProfileSkeleton() {
 	return (
@@ -87,13 +84,14 @@ export function ProfilePage({ icon: Icon, text }: { icon: LucideIcon; text: stri
 								<Input id="profile-name" autoComplete="name" aria-invalid={Boolean(errors.name)} {...register("name")} />
 								<FieldError>{errors.name?.message}</FieldError>
 							</Field>
-							<Field data-invalid={Boolean(errors.email)}>
+							<Field data-invalid={Boolean(errors.email)} aria-readonly>
 								<FieldLabel htmlFor="profile-email">Email</FieldLabel>
 								<Input
 									id="profile-email"
 									type="email"
 									autoComplete="email"
 									aria-invalid={Boolean(errors.email)}
+									readOnly
 									{...register("email")}
 								/>
 								<FieldError>{errors.email?.message}</FieldError>
@@ -162,62 +160,5 @@ export function ProfilePage({ icon: Icon, text }: { icon: LucideIcon; text: stri
 				)}
 			</SheetContent>
 		</Sheet>
-	);
-}
-
-export function ConsentPage() {
-	const [searchParams] = useSearchParams();
-	const { consent } = useAuth();
-	const clientId = searchParams.get("client_id");
-	const redirectUri = searchParams.get("redirect_uri");
-	const scopes = (searchParams.get("scopes") ?? "").trim().split(/\s+/).filter(Boolean);
-	const isValidRequest = Boolean(clientId && redirectUri && scopes.length > 0);
-
-	async function handleConsent(isGranted: boolean) {
-		await consent(
-			{
-				consent: isGranted,
-				client_id: clientId ?? "",
-				scopes,
-			},
-			searchParams,
-		);
-	}
-
-	return (
-		<main className="flex min-h-dvh items-center justify-center p-4">
-			<Card className="w-full max-w-md">
-				<CardHeader className="text-center">
-					<CardTitle className="text-xl">Authorize client</CardTitle>
-					<CardDescription>
-						{isValidRequest
-							? "Continue only if you trust the requesting application."
-							: "This authorization request is incomplete or invalid."}
-					</CardDescription>
-				</CardHeader>
-				<CardContent>
-					{isValidRequest ? (
-						<>
-							<p className="text-sm font-medium">This client is requesting access to:</p>
-							<ul className="mt-3 list-inside list-disc space-y-1 text-sm text-muted-foreground">
-								{scopes.map(scope => (
-									<li key={scope}>{scope}</li>
-								))}
-							</ul>
-						</>
-					) : (
-						<p className="text-sm text-destructive">Required client, redirect, or scope information is missing.</p>
-					)}
-				</CardContent>
-				<CardFooter className="gap-2">
-					<Button disabled={!isValidRequest} onClick={() => void handleConsent(true)}>
-						Authorize
-					</Button>
-					<Button variant="outline" disabled={!isValidRequest} onClick={() => void handleConsent(false)}>
-						Cancel
-					</Button>
-				</CardFooter>
-			</Card>
-		</main>
 	);
 }

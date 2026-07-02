@@ -16,12 +16,14 @@ The Following rules must be followed at all times
 - Added initial release documentation with proper structure ( `CHANGELOG.md` and `RELEASE_NOTES.md`)
 
 ### Changed
-- Improvised the Auth, User, Shared Pages UI, Organization Pages UI
-- Improved the Responsiveness of the Auth Pages ( For all devices), Shared Pages, Organization Pages
+- Improvised the UI for all Pages
+- Improved the Responsiveness for all Pages ( For all devices)
 - Implemented a Clearer and Consistent theming (Light & Dark)
 - Implemented a set of Fonts (Google sans, Google sans Italic and Quicksand)
 - Updated the Logo of the Application
 
+### Removed
+- Removed email change option in User Profile Section
 
 ## dev[1.0.0] - [19-06-26]
 

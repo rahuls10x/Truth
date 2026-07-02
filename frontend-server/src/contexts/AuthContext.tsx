@@ -13,7 +13,7 @@ interface ConsentRequest {
 }
 
 interface AuthContextType {
-	isAuthenticated: boolean;
+	isLoading: boolean;
 	entity: AuthenticatedEntity | null;
 	entityType: EntityType | null;
 	userSignup: (values: SignupSchema) => Promise<void>;
@@ -29,6 +29,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: ReactNode }) {
 	const [entity, setEntity] = useState<AuthenticatedEntity | null>(null);
 	const [entityType, setEntityType] = useState<EntityType | null>(null);
+	const [isLoading, setIsLoading] = useState<boolean>(true);
 	const { getRequest, postRequest } = useApiService(import.meta.env.VITE_API_URL);
 	const { error, success } = useNotification();
 	const navigate = useNavigate();
@@ -134,12 +135,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 			return;
 		}
 
-		success("Consent granted", response.message ?? "Returning to the client application.");
+		success("Consent granted", response?.message ?? "Returning to the client application.");
+		const redirectUrl = `${import.meta.env.VITE_API_URL}/authorize?${authorizationQuery.toString()}`;
+		window.location.assign(redirectUrl);
 		return;
 	}
 
 	useEffect(() => {
 		void getRequest(API_ROUTES.whoAmI).then(response => {
+			setIsLoading(false);
 			if (!response) return;
 
 			if (response.success && response.message) {
@@ -159,7 +163,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 	return (
 		<AuthContext.Provider
 			value={{
-				isAuthenticated : Boolean(entity && entityType),
+				isLoading,
 				entity,
 				entityType,
 				userLogin,
