@@ -52,6 +52,22 @@ export default class ValidationMiddlewares {
 	}
 
 	/**
+	 * @private
+	 * Validates if required fields are present in the request parameters
+	 * 
+	 * Inorder flow:
+	 * - Check if params is present
+	 * - Check if all required fields are present
+	 */
+	private validateRequiredParams(req: Request, ...fields: string[]): void{
+		const params = req.params;
+		strictCheck(params, 400, "Invalid Parameters");
+
+		const status = fields.every(field => field in params);
+		strictCheck(status, 400, "Some or all required parameters are missing");
+	}
+
+	/**
 	 * Validation of user signup incoming data 
 	 * 
 	 * Inorder Flow:
@@ -270,6 +286,30 @@ export default class ValidationMiddlewares {
 			errorHandling(error, res);
 		}
 	};
+
+	/**
+	 * Validation of magic token
+	 * 
+	 * Inorder Flow:
+	 * - validate and retrieve existing fields from request params
+	 * - validate magicToken field
+	 * - pass the control to the next middleware
+	 * 
+	 * @remarks
+	 * checks for magicTokne
+	 */
+	verifyMagicToken: RequestHandler = (req, res, next) => {
+		try{
+			this.validateRequiredParams(req, 'magicToken');
+			const { magicToken } = req.params;
+
+			this.validateData("magicToken", magicToken);
+
+			next();
+		}catch (error){
+			errorHandling(error, res);
+		}
+	}
 
 	/**
 	 * Validation of update User Profile incoming data 

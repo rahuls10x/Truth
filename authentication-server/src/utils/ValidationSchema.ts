@@ -29,6 +29,7 @@ export const validationSchema = {
 	scopes: z.array(z.enum(["name", "email", "age", "gender", "dob", "avatar"], { error: "Invalid Scope." })),
 	authCode: z.string({ error: "Auth Code must be a string" }).startsWith("auth_"),
 	code_verifier: z.string({ error: "Code Verifier must be a string" }).min(43, "Invalid Code Verifier.").max(128, "Invalid Code Verifier."),
+	magicToken: z.string({ error: "Magic Token must be a string" }).startsWith("mt_"),
 };
 
 export type Field = keyof typeof validationSchema;

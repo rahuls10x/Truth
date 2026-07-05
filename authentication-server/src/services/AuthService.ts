@@ -4,17 +4,20 @@ import CryptoService from "./CryptoService.js";
 import type UserRepository from "../repositories/UserRepository.js";
 import type OrganizationRepository from "../repositories/OrganizationRepository.js";
 import type SessionRepository from "../repositories/SessionRepository.js";
-import type { IdentityPayload, LoginPayload } from "../types/index.js";
+import type { IdentityPayload, LinkPayload, LoginPayload } from "../types/index.js";
+import type LinkRepository from "../repositories/LinkRepository.js";
 
 export default class AuthService{
     private sessionRepository: SessionRepository;
     private userRepository: UserRepository;
-    private orgRepository: OrganizationRepository
+    private orgRepository: OrganizationRepository;
+    private linkRepository: LinkRepository;
 
-    constructor(sessionRepository:SessionRepository, userRepository:UserRepository, orgRepository:OrganizationRepository){
+    constructor(sessionRepository:SessionRepository, userRepository:UserRepository, orgRepository:OrganizationRepository, linkRepository:LinkRepository){
         this.sessionRepository = sessionRepository;
         this.userRepository = userRepository;
         this.orgRepository = orgRepository;
+        this.linkRepository = linkRepository;
     }
 
     /**
@@ -44,6 +47,18 @@ export default class AuthService{
         return sessionId;
     }
 
+    private async createMagicLink( type: "user" | "organization", entity:User | Organization, action: string): Promise<void> {
+        
+        const link = CryptoService.generateMagicToken();
+        const linkPayload: LinkPayload = {
+            entityType: type,
+            entityId: type === 'user' ? ( entity as User).userId : ( entity as Organization).orgId,
+            action
+        };
+
+        strictCheck(await this.linkRepository.createCacheLink(link, linkPayload, 5 * 60 * 1000), 500, "Internal Server Error");
+    }
+
     /**
      * Creates user login payload DTO
      * 
@@ -52,7 +67,6 @@ export default class AuthService{
      * - Retrieve sessionId and generate session
      * - Return login payload
      */
-
     async userLogin({email, password, ip, hardware}:{email:string, password:string, ip:string, hardware:object}): Promise<LoginPayload> {
         
         const user = strictCheck(await this.userRepository.getUserByEmail(email), 404, "User does not exist");
@@ -87,6 +101,22 @@ export default class AuthService{
             email: organization.email,
             sessionId
         };
+    }
+
+    
+    /**
+     * Consumes Magic Token and performs action
+     * 
+     * Inorder Flow:
+     * - Retrieve link from cache and delete it
+     */
+    async consumeMagicToken(link:string): Promise<void> {
+        
+        const _linkPayload = strictCheck(await this.linkRepository.getAndDeleteCachedLink(link), 404, "invalid verification link");
+        
+        //perform the update in db depending on the action
+        
+        return;
     }
 
     /**

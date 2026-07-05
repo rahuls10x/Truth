@@ -35,6 +35,26 @@ export default class AuthController {
     }
 
     /**
+     * Handles consumeMagicToken Request
+     * 
+     * Inorder Flow:
+     * - retrive magicToken from request params
+     * - structure and send response
+     */
+    consumeMagicToken: RequestHandler = async (req, res) => {
+        try {
+            const magicToken = strictCheck(req.params['magicToken'], 500, "Internal Server Error");
+
+            await this.authService.consumeMagicToken(magicToken as string);
+
+            res.status(200).json({
+                success: true,
+                message: "Magic Token has been consumed Successfully"
+            });
+        } catch (error) {errorHandling(error, res);}
+    }
+
+    /**
      * Handles user login Request
      * 
      * Inorder Flow:

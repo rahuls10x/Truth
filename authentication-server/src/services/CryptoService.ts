@@ -15,6 +15,16 @@ export default class CryptoService {
     }
 
     /**
+     * Generate a random Magic Token
+     * 
+     * Inorder Flow:
+     * - generate and return Magic Token ( 32 chars + prefix)
+     */
+    static generateMagicToken(){
+        return "mt_" + crypto.randomBytes(16).toString('hex');
+    }
+
+    /**
      * Verify a Code challenge
      * 
      * Inorder Flow:

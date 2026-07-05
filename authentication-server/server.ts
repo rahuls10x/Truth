@@ -22,6 +22,7 @@ import OAuthController from "./src/controllers/OAuthController.js";
 import OAuthService from "./src/services/OAuthService.js";
 import ConsentRepository from "./src/repositories/ConsentRepository.js";
 import TokenAuthMiddleware from "./src/middlewares/TokenAuthMiddleware.js";
+import LinkRepository from "./src/repositories/LinkRepository.js";
 
 // ------------- Configuration ---------------
 const app = express();
@@ -66,8 +67,9 @@ async function boot (){
         const orgRepository = new OrganizationRepository(mongoDb);
         const sessionRepository = new SessionRepository(mongoDb);
         const consentRepository = new ConsentRepository(mongoDb);
+        const linkRepository = new LinkRepository(redisConnection);
 
-        const authService = new AuthService(sessionRepository, userRepository, orgRepository);
+        const authService = new AuthService(sessionRepository, userRepository, orgRepository, linkRepository);
         const userService = new UserService(userRepository);
         const orgService = new OrganizationService(orgRepository, clientRepository);
         const oAuthService = new OAuthService(clientRepository, tokenRepository, consentRepository);
@@ -92,6 +94,8 @@ async function boot (){
 
         app.post("/user/login", validationMiddleware.login, authController.userLogin);
         app.post("/org/login", validationMiddleware.login, authController.organizationLogin);
+
+        app.put("/verify/:magicToken", validationMiddleware.verifyMagicToken, authController.consumeMagicToken);
 
         app.get("/logout", authMiddleware.checkAuthToken, authController.logout);
 

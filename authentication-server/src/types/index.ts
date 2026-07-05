@@ -132,3 +132,9 @@ export interface IdentityPayload {
 	email: string;
 	type: "user" | "organization";
 }
+
+export interface LinkPayload {
+    entityType: "user" | "organization";
+    entityId: string;
+    action: string;
+}
