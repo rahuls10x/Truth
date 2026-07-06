@@ -16,6 +16,7 @@ const OrganizationLoginPage = lazy(() => authPages().then(module => ({ default: 
 const UserSignupPage = lazy(() => authPages().then(module => ({ default: module.UserSignupPage })));
 const OrganizationSignupPage = lazy(() => authPages().then(module => ({ default: module.OrganizationSignupPage })));
 const ConsentPage = lazy(() => authPages().then(module => ({ default: module.ConsentPage })));
+const EmailVerificationPage = lazy(() => authPages().then(module => ({ default: module.verifyEmailPage })));
 const ClientsPage = lazy(() => import("@/features/organization/OrganizationPages"));
 const NotFoundPage = lazy(() => import("@/features/shared/SharedPages").then(module => ({ default: module.NotFoundPage })));
 
@@ -30,6 +31,7 @@ function AppRoutes() {
 					<Route path={APP_ROUTES.organization.login} element={<OrganizationLoginPage />} />
 					<Route path={APP_ROUTES.user.signup} element={<UserSignupPage />} />
 					<Route path={APP_ROUTES.organization.signup} element={<OrganizationSignupPage />} />
+					<Route path={APP_ROUTES.emailVerification} element={<EmailVerificationPage/>} />
 				</Route>
 
 				<Route element={<ProtectedRoute entityType="user" />}>

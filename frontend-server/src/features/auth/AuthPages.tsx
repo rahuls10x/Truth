@@ -19,7 +19,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { EyeIcon, EyeOffIcon, LoaderCircleIcon } from "lucide-react";
 import { useState, type ComponentProps, type ReactNode } from "react";
 import { useForm } from "react-hook-form";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 
 // Smaller shared components
 
@@ -345,7 +345,7 @@ export function ConsentPage() {
 
 	return (
 		<AuthInterface
-			title={`Authorize ${clientName ? capitalizeInitials(clientName ?? "") : 'nothing'}`}
+			title={`Authorize ${clientName ? capitalizeInitials(clientName ?? "") : "nothing"}`}
 			description={isValidRequest ? "Only authorize clients you trust" : "Authorization request is incomplete or invalid"}
 			footer=""
 		>
@@ -368,7 +368,6 @@ export function ConsentPage() {
 							<Link to={APP_ROUTES.root}>Return Home</Link>
 						</Button>
 					</CardContent>
-					
 				</Card>
 			)}
 
@@ -390,6 +389,46 @@ export function ConsentPage() {
 							Cancel
 						</Button>
 					</CardFooter>
+				</Card>
+			)}
+		</AuthInterface>
+	);
+}
+
+export function verifyEmailPage() {
+	const navigate = useNavigate();
+	const magicToken = window.location.pathname.split("/").pop() ?? "";
+	const isValidRequest = Boolean(magicToken) && magicToken.startsWith('mt');
+	const { verifyEmail } = useAuth();
+
+	async function handleVerify() {
+		await verifyEmail(magicToken);
+	} 
+
+	function handleCancel() {
+		navigate("/");
+	}
+	return (
+		<AuthInterface
+			title={"Verify your email"}
+			description=""
+			footer=""
+		>
+			{isValidRequest && (
+				<Card className="bg-transparent ring-0">
+					<CardHeader>
+						<CardDescription className="font-subheading text-base text-muted-foreground">
+							You are agreeing to Terms of Use by clicking the button below.
+						</CardDescription>
+					</CardHeader>
+					<CardContent className="gap-3 bg-transparent flex flex-col">
+						<Button disabled={!isValidRequest} className="grow" onClick={handleVerify}>
+							Verify
+						</Button>
+						<Button variant="outline" className="" disabled={!isValidRequest} onClick={handleCancel}>
+							Cancel
+						</Button>
+					</CardContent>
 				</Card>
 			)}
 		</AuthInterface>

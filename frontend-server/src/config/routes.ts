@@ -3,6 +3,7 @@ import type { EntityType } from "@/types";
 export const APP_ROUTES = {
 	root: "/",
 	consent: "/consent",
+	emailVerification: "/verify-email",
 	user: {
 		login: "/user/login",
 		signup: "/user/signup",
@@ -20,6 +21,7 @@ export const API_ROUTES = {
 	whoAmI: "/whoAmI",
 	logout: "/logout",
 	consent: "/consent",
+	verifyEmail: "/verify-email",
 	authorize: "/authorize",
 	user:{
 		login: "/user/login",

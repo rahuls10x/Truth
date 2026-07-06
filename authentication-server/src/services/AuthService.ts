@@ -4,7 +4,7 @@ import CryptoService from "./CryptoService.js";
 import type UserRepository from "../repositories/UserRepository.js";
 import type OrganizationRepository from "../repositories/OrganizationRepository.js";
 import type SessionRepository from "../repositories/SessionRepository.js";
-import type { IdentityPayload, LinkPayload, LoginPayload } from "../types/index.js";
+import type { IdentityPayload, LoginPayload } from "../types/index.js";
 import type LinkRepository from "../repositories/LinkRepository.js";
 
 export default class AuthService{
@@ -45,18 +45,6 @@ export default class AuthService{
         strictCheck(await this.sessionRepository.createSession(sessionObject), 500, "Internal Server Error");
 
         return sessionId;
-    }
-
-    private async createMagicLink( type: "user" | "organization", entity:User | Organization, action: string): Promise<void> {
-        
-        const link = CryptoService.generateMagicToken();
-        const linkPayload: LinkPayload = {
-            entityType: type,
-            entityId: type === 'user' ? ( entity as User).userId : ( entity as Organization).orgId,
-            action
-        };
-
-        strictCheck(await this.linkRepository.createCacheLink(link, linkPayload, 5 * 60 * 1000), 500, "Internal Server Error");
     }
 
     /**
@@ -105,16 +93,24 @@ export default class AuthService{
 
     
     /**
-     * Consumes Magic Token and performs action
+     * Verifies the email
      * 
      * Inorder Flow:
-     * - Retrieve link from cache and delete it
+     * - Retrieve linkPayload from cache, delete it and verify its action
+     * - If user, verify the user
+     * - If organization, verify the organization
      */
-    async consumeMagicToken(link:string): Promise<void> {
+    async verifyEmail(magicToken:string): Promise<void> {
+        const linkPayload = strictCheck(await this.linkRepository.getAndDeleteCachedLink(magicToken), 404, "Invalid verification link");
+        strictCheck(linkPayload.action === "verify", 404, "Invalid verification link");
+
+        if(linkPayload.entityType === "user"){
+            strictCheck(await this.userRepository.updateUserById(linkPayload.entityId, {isVerified:true}), 500, "Internal Server Error"); 
+        }
         
-        const _linkPayload = strictCheck(await this.linkRepository.getAndDeleteCachedLink(link), 404, "invalid verification link");
-        
-        //perform the update in db depending on the action
+        if(linkPayload.entityType === "organization"){
+            strictCheck(await this.orgRepository.updateOrganizationById(linkPayload.entityId, {isVerified:true}), 500, "Internal Server Error");
+        }
         
         return;
     }

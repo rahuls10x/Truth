@@ -35,21 +35,22 @@ export default class AuthController {
     }
 
     /**
-     * Handles consumeMagicToken Request
+     * Handles verify email Request
      * 
      * Inorder Flow:
      * - retrive magicToken from request params
+     * - verify email
      * - structure and send response
      */
-    consumeMagicToken: RequestHandler = async (req, res) => {
+    verifyEmail: RequestHandler = async (req, res) => {
         try {
             const magicToken = strictCheck(req.params['magicToken'], 500, "Internal Server Error");
 
-            await this.authService.consumeMagicToken(magicToken as string);
+            await this.authService.verifyEmail(magicToken as string);
 
             res.status(200).json({
                 success: true,
-                message: "Magic Token has been consumed Successfully"
+                message: "Email has been verified Successfully"
             });
         } catch (error) {errorHandling(error, res);}
     }

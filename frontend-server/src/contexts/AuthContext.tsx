@@ -22,6 +22,7 @@ interface AuthContextType {
 	organizationLogin: (values: LoginSchema) => Promise<void>;
 	logout: () => Promise<void>;
 	consent: (values: ConsentRequest, authorizationQuery: URLSearchParams) => Promise<void>;
+	verifyEmail:(magicToken:string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -30,7 +31,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 	const [entity, setEntity] = useState<AuthenticatedEntity | null>(null);
 	const [entityType, setEntityType] = useState<EntityType | null>(null);
 	const [isLoading, setIsLoading] = useState<boolean>(true);
-	const { getRequest, postRequest } = useApiService(import.meta.env.VITE_API_URL);
+	const { getRequest, postRequest, putRequest } = useApiService(import.meta.env.VITE_API_URL);
 	const { error, success } = useNotification();
 	const navigate = useNavigate();
 
@@ -141,6 +142,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 		return;
 	}
 
+	async function verifyEmail(magicToken:string):Promise<void> {
+		const response = await putRequest(`${API_ROUTES.verifyEmail}/${magicToken}`, {});
+		if (!response) return;
+
+		if (!response.success && response.error) {
+			error("Unable to verify email", response.error);
+			return;
+		}
+
+		if (response.success && response.message) {
+			success("Email verified", response.message);
+			return;
+		}
+	}
+
 	useEffect(() => {
 		void getRequest(API_ROUTES.whoAmI).then(response => {
 			setIsLoading(false);
@@ -172,6 +188,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 				organizationSignup,
 				logout,
 				consent,
+				verifyEmail
 			}}
 		>
 			{children}

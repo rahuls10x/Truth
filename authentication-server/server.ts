@@ -70,8 +70,8 @@ async function boot (){
         const linkRepository = new LinkRepository(redisConnection);
 
         const authService = new AuthService(sessionRepository, userRepository, orgRepository, linkRepository);
-        const userService = new UserService(userRepository);
-        const orgService = new OrganizationService(orgRepository, clientRepository);
+        const userService = new UserService(userRepository, linkRepository);
+        const orgService = new OrganizationService(orgRepository, clientRepository, linkRepository);
         const oAuthService = new OAuthService(clientRepository, tokenRepository, consentRepository);
 
         const authController = new AuthController(authService);
@@ -95,7 +95,7 @@ async function boot (){
         app.post("/user/login", validationMiddleware.login, authController.userLogin);
         app.post("/org/login", validationMiddleware.login, authController.organizationLogin);
 
-        app.put("/verify/:magicToken", validationMiddleware.verifyMagicToken, authController.consumeMagicToken);
+        app.put("/verify-email/:magicToken", validationMiddleware.verifyEmail, authController.verifyEmail);
 
         app.get("/logout", authMiddleware.checkAuthToken, authController.logout);
 

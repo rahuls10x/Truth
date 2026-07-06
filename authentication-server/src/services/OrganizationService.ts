@@ -3,26 +3,51 @@ import type OrganizationRepository from "../repositories/OrganizationRepository.
 import { strictCheck } from "../utils/ApplicationError.js";
 import CryptoService from "./CryptoService.js";
 import type ClientRepository from "../repositories/ClientRepository.js";
-import type { ClientPayload, CreateClientParams } from "../types/index.js";
+import type { ClientPayload, CreateClientParams, LinkPayload } from "../types/index.js";
+import type LinkRepository from "../repositories/LinkRepository.js";
 
 export default class OrganizationService {
 	private orgRepository: OrganizationRepository;
 	private clientRepository: ClientRepository;
+	private linkRepository: LinkRepository;
 
-	constructor(orgRepository: OrganizationRepository, clientRepository: ClientRepository) {
+	constructor(orgRepository: OrganizationRepository, clientRepository: ClientRepository, linkRepository: LinkRepository) {
 		this.orgRepository = orgRepository;
 		this.clientRepository = clientRepository;
+		this.linkRepository = linkRepository;
+	}
+
+	/**
+	 * Creates a magic Token for organization
+	 * 
+	 * Inorder Flow:
+	 * - Create magic token and linkPayload
+	 * - Create magic link in cache
+	 * - Return magic token
+	 */
+	private async createMagicToken(entity: Organization, action: string): Promise<string> {
+		const magicToken = CryptoService.generateMagicToken();
+		const linkPayload: LinkPayload = {
+			entityType: "user",
+			entityId: entity.orgId,
+			action,
+		};
+
+		strictCheck(await this.linkRepository.createCacheLink(magicToken, linkPayload, 5 * 60 * 1000), 500, "Internal Server Error");
+
+		return magicToken;
 	}
 
 	/**
 	 * Handles Organization signup
-	 * 
+	 *
 	 * Inorder Flow:
 	 * - Check if organization already exists (by email)
 	 * - create organization object (password hashing, Id generation also done here)
 	 * - create organization and verify organization creation
+	 * - create magic token and logs it
 	 * - return true (will not reach here if any of the above step causes error)
-	 * 
+	 *
 	 * @refinement
 	 * implement otp veirfication system
 	 */
@@ -52,6 +77,9 @@ export default class OrganizationService {
 		};
 
 		strictCheck(await this.orgRepository.createOrganization(orgObject), 500, "Internal Server Error");
+
+		const magicToken = await this.createMagicToken(orgObject, "verify");
+		console.log(magicToken); //temporary until i implement mailing service
 
 		return true;
 	}
@@ -86,8 +114,8 @@ export default class OrganizationService {
 
 	/**
 	 * Creates a Client with given params
-	 * 
-	 * Inorder Flow: 
+	 *
+	 * Inorder Flow:
 	 * - create client object
 	 * - create and verify client creation
 	 * - model and return newly created client for safety

@@ -288,7 +288,7 @@ export default class ValidationMiddlewares {
 	};
 
 	/**
-	 * Validation of magic token
+	 * Validation of verify email incoming data
 	 * 
 	 * Inorder Flow:
 	 * - validate and retrieve existing fields from request params
@@ -296,9 +296,9 @@ export default class ValidationMiddlewares {
 	 * - pass the control to the next middleware
 	 * 
 	 * @remarks
-	 * checks for magicTokne
+	 * checks for magicToken
 	 */
-	verifyMagicToken: RequestHandler = (req, res, next) => {
+	verifyEmail: RequestHandler = (req, res, next) => {
 		try{
 			this.validateRequiredParams(req, 'magicToken');
 			const { magicToken } = req.params;
