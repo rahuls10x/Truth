@@ -3,39 +3,21 @@ import type OrganizationRepository from "../repositories/OrganizationRepository.
 import { strictCheck } from "../utils/ApplicationError.js";
 import CryptoService from "./CryptoService.js";
 import type ClientRepository from "../repositories/ClientRepository.js";
-import type { ClientPayload, CreateClientParams, LinkPayload } from "../types/index.js";
-import type LinkRepository from "../repositories/LinkRepository.js";
+import type { ClientPayload, CreateClientParams} from "../types/index.js";
+import type LinkService from "./LinkSevice.js";
+import type MailService from "./MailService.js";
 
 export default class OrganizationService {
 	private orgRepository: OrganizationRepository;
 	private clientRepository: ClientRepository;
-	private linkRepository: LinkRepository;
+	private linkService: LinkService;
+	private mailService: MailService;
 
-	constructor(orgRepository: OrganizationRepository, clientRepository: ClientRepository, linkRepository: LinkRepository) {
+	constructor(orgRepository: OrganizationRepository, clientRepository: ClientRepository, linkService: LinkService, mailService: MailService) {
 		this.orgRepository = orgRepository;
 		this.clientRepository = clientRepository;
-		this.linkRepository = linkRepository;
-	}
-
-	/**
-	 * Creates a magic Token for organization
-	 * 
-	 * Inorder Flow:
-	 * - Create magic token and linkPayload
-	 * - Create magic link in cache
-	 * - Return magic token
-	 */
-	private async createMagicToken(entity: Organization, action: string): Promise<string> {
-		const magicToken = CryptoService.generateMagicToken();
-		const linkPayload: LinkPayload = {
-			entityType: "user",
-			entityId: entity.orgId,
-			action,
-		};
-
-		strictCheck(await this.linkRepository.createCacheLink(magicToken, linkPayload, 5 * 60 * 1000), 500, "Internal Server Error");
-
-		return magicToken;
+		this.linkService = linkService;
+		this.mailService = mailService;
 	}
 
 	/**
@@ -73,13 +55,13 @@ export default class OrganizationService {
 			email,
 			domain,
 			password: await CryptoService.hashPassword(password),
-			isVerified: false, /// implement email verification later
+			isVerified: false,
 		};
 
 		strictCheck(await this.orgRepository.createOrganization(orgObject), 500, "Internal Server Error");
 
-		const magicToken = await this.createMagicToken(orgObject, "verify");
-		console.log(magicToken); //temporary until i implement mailing service
+		const magicToken = await this.linkService.createMagicToken(orgObject.orgId, 'organization', "verify");
+		await this.mailService.sendVerificationEmail(email, magicToken);
 
 		return true;
 	}

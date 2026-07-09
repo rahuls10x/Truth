@@ -14,6 +14,7 @@ The Following rules must be followed at all times
 
 ### Added
 - Added initial release documentation with proper structure ( `CHANGELOG.md` and `RELEASE_NOTES.md`)
+- Added Email Verification feature
 
 ### Changed
 - Improvised the UI for all Pages

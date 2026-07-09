@@ -46,11 +46,12 @@ export default class AuthController {
         try {
             const magicToken = strictCheck(req.params['magicToken'], 500, "Internal Server Error");
 
-            await this.authService.verifyEmail(magicToken as string);
+            const data = await this.authService.verifyEmail(magicToken as string);
 
             res.status(200).json({
                 success: true,
-                message: "Email has been verified Successfully"
+                message: "Email has been verified Successfully",
+                data:data
             });
         } catch (error) {errorHandling(error, res);}
     }

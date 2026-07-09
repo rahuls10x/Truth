@@ -1,10 +1,12 @@
 import Logo from "@/assets/Logo";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
 import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
-import { APP_ROUTES } from "@/config/routes";
+import { Spinner } from "@/components/ui/spinner";
+import { APP_ROUTES, getLoginRoute } from "@/config/routes";
 import { useAuth } from "@/contexts/AuthContext";
 import type { EntityType } from "@/types";
 import {
@@ -16,10 +18,10 @@ import {
 	type SignupSchema as SignupValues,
 } from "@/types/validation";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { EyeIcon, EyeOffIcon, LoaderCircleIcon } from "lucide-react";
-import { useState, type ComponentProps, type ReactNode } from "react";
+import { CircleCheckIcon, EyeIcon, EyeOffIcon, LoaderCircleIcon } from "lucide-react";
+import { useEffect, useState, type ComponentProps, type ReactNode } from "react";
 import { useForm } from "react-hook-form";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 
 // Smaller shared components
 
@@ -396,40 +398,54 @@ export function ConsentPage() {
 }
 
 export function verifyEmailPage() {
+	const [status, setStatus] = useState<{type: "user" | "organization"} | undefined>(undefined);
 	const navigate = useNavigate();
-	const magicToken = window.location.pathname.split("/").pop() ?? "";
-	const isValidRequest = Boolean(magicToken) && magicToken.startsWith('mt');
+	const { magicToken } = useParams();
+	const isValidRequest = magicToken && magicToken.startsWith("mt");
 	const { verifyEmail } = useAuth();
 
 	async function handleVerify() {
-		await verifyEmail(magicToken);
-	} 
-
-	function handleCancel() {
-		navigate("/");
+		if (!isValidRequest) return;
+		setStatus(await verifyEmail(magicToken));
 	}
+
+	useEffect(()=>{
+		handleVerify();
+	},[]);
+
 	return (
-		<AuthInterface
-			title={"Verify your email"}
-			description=""
-			footer=""
-		>
+		<AuthInterface title={"Email Verification"} description="" footer="">
 			{isValidRequest && (
-				<Card className="bg-transparent ring-0">
-					<CardHeader>
-						<CardDescription className="font-subheading text-base text-muted-foreground">
-							You are agreeing to Terms of Use by clicking the button below.
-						</CardDescription>
-					</CardHeader>
-					<CardContent className="gap-3 bg-transparent flex flex-col">
-						<Button disabled={!isValidRequest} className="grow" onClick={handleVerify}>
-							Verify
+				<Empty className="w-full">
+					<EmptyHeader>
+						<EmptyMedia className="size-10">
+							{status ? <CircleCheckIcon className="size-6" /> : <Spinner className="size-6" />}
+						</EmptyMedia>
+						<EmptyTitle className="font-heading text-lg">{status ? "Email verified" : "Processing your request"}</EmptyTitle>
+						<EmptyDescription className="font-subheading text-sm">
+							{status
+								? "Your email has been successfully verified. Visit to login page"
+								: "Please wait while we process your request. Do not refresh the page."}
+						</EmptyDescription>
+					</EmptyHeader>
+					<EmptyContent>
+						{status && <Button variant="outline" onClick={() => navigate(getLoginRoute(status?.type))}>Login</Button>}
+					</EmptyContent>
+				</Empty>
+			)}
+			{!isValidRequest && (
+				<Empty>
+					<EmptyHeader>
+						<EmptyDescription className="font-subheading text-base text-muted-foreground">
+							Caught you! Trying funny things are we?
+						</EmptyDescription>
+					</EmptyHeader>
+					<EmptyContent>
+						<Button asChild>
+							<Link to={APP_ROUTES.root}>Return Home</Link>
 						</Button>
-						<Button variant="outline" className="" disabled={!isValidRequest} onClick={handleCancel}>
-							Cancel
-						</Button>
-					</CardContent>
-				</Card>
+					</EmptyContent>
+				</Empty>
 			)}
 		</AuthInterface>
 	);

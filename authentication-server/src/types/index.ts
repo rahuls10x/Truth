@@ -56,7 +56,6 @@ export interface ProfilePayload {
 export interface UpdateProfileBody {
 	userId: string;
 	name: string;
-	email: string;
 	age: number;
 	gender: "Female" | "Male" | "Prefer not to say";
 }

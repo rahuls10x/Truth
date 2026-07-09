@@ -1,39 +1,21 @@
 import type UserRepository from "../repositories/UserRepository.js";
-import type { LinkPayload, ProfilePayload, UpdateProfileBody } from "../types/index.js";
+import type { ProfilePayload, UpdateProfileBody } from "../types/index.js";
 import { strictCheck } from "../utils/ApplicationError.js";
 import CryptoService from "./CryptoService.js";
 import type { User } from "../types/dbSchema.js";
-import type LinkRepository from "../repositories/LinkRepository.js";
+import type LinkService from "./LinkSevice.js";
+import type MailService from "./MailService.js";
 
 export default class UserService {
 	private userRepository:UserRepository;
-	private linkRepository:LinkRepository;
+	private linkService:LinkService;
+	private mailService:MailService;
 
-	constructor(userRepository: UserRepository, linkRepository:LinkRepository){
+	constructor(userRepository: UserRepository, linkService:LinkService, mailService:MailService){
 		this.userRepository = userRepository;
-		this.linkRepository = linkRepository;
+		this.linkService = linkService;
+		this.mailService = mailService;
 	}
-
-	/**
-	 * Creates a magic Token for user
-	 * 
-	 * Inorder Flow:
-	 * - Create magic token and linkPayload
-	 * - Create magic link in cache
-	 * - Return magic token
-	 */
-	private async createMagicToken( entity:User, action: string): Promise<string> { 
-        const magicToken = CryptoService.generateMagicToken();
-        const linkPayload: LinkPayload = {
-            entityType: 'user',
-            entityId: entity.userId,
-            action
-        };
-
-        strictCheck(await this.linkRepository.createCacheLink(magicToken, linkPayload, 5 * 60 * 1000), 500, "Internal Server Error");
-
-		return magicToken;
-    }
 
 	/**
 	 * Handles user signup
@@ -42,7 +24,7 @@ export default class UserService {
 	 * - Check if user already exists (by email)
 	 * - create user object (password hashing also done here)
 	 * - create user and verify user creation
-	 * - create magic token and logs it
+	 * - create magic token and emails it
 	 * - return true (will not reach here if any of the above step causes error)
 	 * 
 	 * @refinement
@@ -62,8 +44,8 @@ export default class UserService {
 		
 		strictCheck(await this.userRepository.createUser(userObject), 500, "Internal Server Error");
 
-		const magicToken = await this.createMagicToken(userObject, "verify");
-		console.log(magicToken); //temporary until i implement mailing service
+		const magicToken = await this.linkService.createMagicToken(userObject.userId, "user", "verify");
+		await this.mailService.sendVerificationEmail(email, magicToken);
 
 		return true;
 	}
@@ -106,7 +88,6 @@ export default class UserService {
 		const userId = updateBody.userId;
 		const updateData = {
 			name:updateBody.name,
-			email:updateBody.email,
 			age:updateBody.age,
 			gender:updateBody.gender
 		}

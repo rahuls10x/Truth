@@ -320,16 +320,15 @@ export default class ValidationMiddlewares {
 	 * - pass the control to the next middleware
 	 * 
 	 * @remarks
-	 * checks for name, email, age, gender in request body
+	 * checks for name, age, gender in request body
 	 */
 	validateUpdateProfile: RequestHandler = ( req, res, next )  =>{
 		
 		try {
-			this.validateRequiredFields(req, 'name', 'email', 'age', "gender");
-			const { name, email, age, gender } = req.body;
+			this.validateRequiredFields(req, 'name', 'age', "gender");
+			const { name, age, gender } = req.body;
 			
 			this.validateData('name', name);
-			this.validateData('email', email);
 			this.validateData('age', age);
 			this.validateData('gender', gender);
 

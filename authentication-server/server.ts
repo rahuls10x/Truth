@@ -23,6 +23,8 @@ import OAuthService from "./src/services/OAuthService.js";
 import ConsentRepository from "./src/repositories/ConsentRepository.js";
 import TokenAuthMiddleware from "./src/middlewares/TokenAuthMiddleware.js";
 import LinkRepository from "./src/repositories/LinkRepository.js";
+import MailService from "./src/services/MailService.js";
+import LinkService from "./src/services/LinkSevice.js";
 
 // ------------- Configuration ---------------
 const app = express();
@@ -69,9 +71,11 @@ async function boot (){
         const consentRepository = new ConsentRepository(mongoDb);
         const linkRepository = new LinkRepository(redisConnection);
 
+        const mailService = new MailService(process.env.ORIGIN_URL);
+        const linkService = new LinkService(linkRepository);
         const authService = new AuthService(sessionRepository, userRepository, orgRepository, linkRepository);
-        const userService = new UserService(userRepository, linkRepository);
-        const orgService = new OrganizationService(orgRepository, clientRepository, linkRepository);
+        const userService = new UserService(userRepository, linkService, mailService);
+        const orgService = new OrganizationService(orgRepository, clientRepository, linkService, mailService);
         const oAuthService = new OAuthService(clientRepository, tokenRepository, consentRepository);
 
         const authController = new AuthController(authService);
@@ -109,7 +113,7 @@ async function boot (){
 
         app.get("/", (_req, res) => {
             res.send("Server is Running!!");
-        })
+        });
 
         // ------------- Server Start ---------------
         app.listen(process.env.PORT, () => {

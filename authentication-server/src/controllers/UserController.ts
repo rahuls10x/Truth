@@ -71,7 +71,6 @@ export default class UserController{
             await this.userService.updateProfile({
                 userId,
                 name: req.body.name,
-                email: req.body.email,
                 age: req.body.age,
                 gender: req.body.gender
             });

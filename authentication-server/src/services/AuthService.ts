@@ -91,27 +91,29 @@ export default class AuthService{
         };
     }
 
-    
     /**
      * Verifies the email
      * 
      * Inorder Flow:
      * - Retrieve linkPayload from cache, delete it and verify its action
-     * - If user, verify the user
-     * - If organization, verify the organization
+     * - If user, verify the user and return the type
+     * - If organization, verify the organization and return the type
+     * - Return
      */
-    async verifyEmail(magicToken:string): Promise<void> {
+    async verifyEmail(magicToken:string): Promise<{type: 'user' | 'organization'} | undefined> {
         const linkPayload = strictCheck(await this.linkRepository.getAndDeleteCachedLink(magicToken), 404, "Invalid verification link");
         strictCheck(linkPayload.action === "verify", 404, "Invalid verification link");
 
         if(linkPayload.entityType === "user"){
-            strictCheck(await this.userRepository.updateUserById(linkPayload.entityId, {isVerified:true}), 500, "Internal Server Error"); 
+            strictCheck(await this.userRepository.updateUserById(linkPayload.entityId, {isVerified:true}), 500, "Internal Server Error");
+            return {type : 'user'}
         }
         
         if(linkPayload.entityType === "organization"){
             strictCheck(await this.orgRepository.updateOrganizationById(linkPayload.entityId, {isVerified:true}), 500, "Internal Server Error");
+            return {type : 'organization'}
         }
-        
+
         return;
     }
 

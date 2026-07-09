@@ -3,7 +3,7 @@ import type { EntityType } from "@/types";
 export const APP_ROUTES = {
 	root: "/",
 	consent: "/consent",
-	emailVerification: "/verify-email",
+	emailVerification: "/verify-email/:magicToken",
 	user: {
 		login: "/user/login",
 		signup: "/user/signup",

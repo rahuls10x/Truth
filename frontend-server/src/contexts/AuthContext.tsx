@@ -22,7 +22,7 @@ interface AuthContextType {
 	organizationLogin: (values: LoginSchema) => Promise<void>;
 	logout: () => Promise<void>;
 	consent: (values: ConsentRequest, authorizationQuery: URLSearchParams) => Promise<void>;
-	verifyEmail:(magicToken:string) => Promise<void>;
+	verifyEmail:(magicToken:string) => Promise<{type: EntityType} | undefined>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -142,7 +142,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 		return;
 	}
 
-	async function verifyEmail(magicToken:string):Promise<void> {
+	async function verifyEmail(magicToken:string):Promise<{type: EntityType} | undefined> {
 		const response = await putRequest(`${API_ROUTES.verifyEmail}/${magicToken}`, {});
 		if (!response) return;
 
@@ -153,7 +153,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
 		if (response.success && response.message) {
 			success("Email verified", response.message);
-			return;
+			return response.data.type;
 		}
 	}
 
