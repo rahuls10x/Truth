@@ -1,4 +1,4 @@
-import type { Db } from "mongodb";
+import { ObjectId, type Db } from "mongodb";
 import type { Session } from "../types/dbSchema.js";
 
 export default class SessionRepository{
@@ -92,5 +92,64 @@ export default class SessionRepository{
             }
         });
         return result.modifiedCount === 1;
+    }
+
+    /**
+     * Retrieves All active sessions by entityId
+     * 
+     * Inorder Flow: 
+     * - Retrieves and returns all active sessions
+     * 
+     * @remarks
+     * check if session is not revoked and not expired
+     */
+    async findAllActiveSessionsByEntityId(entityId:string): Promise <Session[]>{
+        const result = await this.db.collection<Session>("sessions").find({
+            entityId,
+            isRevoked:false,
+            expiresAt:{ $gt: new Date()}
+        }).toArray();
+        return result;
+    }
+
+    /**
+     * Revoke a session by MaskedId(_id) 
+     * 
+     * Inorder Flow:
+     * - Revokes the session
+     * 
+     * @remarks
+     * does not check if session is already revoked (negligible security risk)
+     */
+    async revokeSessionByMaskedId(_id: string):Promise <boolean>{
+        const result = await this.db.collection<Session>("sessions").updateOne({ 
+            _id: new ObjectId(_id),
+        }, {
+            $set: {
+                isRevoked: true,
+            }
+        });
+        return result.modifiedCount === 1;
+    }
+
+    /**
+     * Revoke all sessions except current session
+     * 
+     * Inorder Flow:
+     * - Revokes the all sessions
+     * 
+     * @remarks
+     * does not check if session is already revoked (negligible security risk) and only checks acknowledgement
+     */
+    async revokeAllSessionsExceptCurrent(currentSessionId: string, entityId: string):Promise <boolean>{
+        const result = await this.db.collection<Session>("sessions").updateMany({ 
+            entityId,
+            sessionId: {$ne: currentSessionId},
+        }, {
+            $set: {
+                isRevoked: true,
+            }
+        });
+        return result.acknowledged;
     }
 }

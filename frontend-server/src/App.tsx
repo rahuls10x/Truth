@@ -4,7 +4,7 @@ import { APP_ROUTES } from "@/config/routes";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { NotificationProvider } from "@/contexts/NotificationContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
-import { ComingSoonPage } from "@/features/shared/SharedPages";
+import { ComingSoonPage, SessionPage } from "@/features/shared/SharedPages";
 import PortalLayout from "@/layouts/PortalLayout";
 import { lazy, Suspense } from "react";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
@@ -38,13 +38,15 @@ function AppRoutes() {
 					<Route path={APP_ROUTES.consent} element={<ConsentPage />} />
 					<Route path={APP_ROUTES.user.portal} element={<PortalLayout entity="user" />}>
 						<Route index element={<ComingSoonPage/>} />
+						<Route path={APP_ROUTES.user.session} element={<SessionPage />} />
 					</Route>
 				</Route>
 
 				<Route element={<ProtectedRoute entityType="organization" />}>
 					<Route path={APP_ROUTES.organization.portal} element={<PortalLayout entity="organization" />}>
 						<Route index element={<ComingSoonPage />} />
-						<Route path="clients" element={<ClientsPage />} />
+						<Route path={APP_ROUTES.organization.clients} element={<ClientsPage />} />
+						<Route path={APP_ROUTES.organization.session} element={<SessionPage />} />
 					</Route>
 				</Route>
 

@@ -1,10 +1,10 @@
-import type {  Organization, Session, User } from "../types/dbSchema.js";
+import type {  Hardware, Organization, Session, User } from "../types/dbSchema.js";
 import { strictCheck } from "../utils/ApplicationError.js";
 import CryptoService from "./CryptoService.js";
 import type UserRepository from "../repositories/UserRepository.js";
 import type OrganizationRepository from "../repositories/OrganizationRepository.js";
 import type SessionRepository from "../repositories/SessionRepository.js";
-import type { IdentityPayload, LoginPayload } from "../types/index.js";
+import type { IdentityPayload, LoginPayload, SessionPayload } from "../types/index.js";
 import type LinkRepository from "../repositories/LinkRepository.js";
 
 export default class AuthService{
@@ -28,7 +28,7 @@ export default class AuthService{
      * - Create and verify session creation
      * - Return sessionId
      */
-    private async createSession(type: "user" | "organization", entity:User | Organization, email:string, ip:string, hardware:object): Promise<string> {
+    private async createSession(type: "user" | "organization", entity:User | Organization, email:string, ip:string, hardware:Hardware): Promise<string> {
         const sessionId = CryptoService.generateSessionId();
         const sessionObject:Session = {
             sessionId,
@@ -55,7 +55,7 @@ export default class AuthService{
      * - Retrieve sessionId and generate session
      * - Return login payload
      */
-    async userLogin({email, password, ip, hardware}:{email:string, password:string, ip:string, hardware:object}): Promise<LoginPayload> {
+    async userLogin({email, password, ip, hardware}:{email:string, password:string, ip:string, hardware:Hardware}): Promise<LoginPayload> {
         
         const user = strictCheck(await this.userRepository.getUserByEmail(email), 404, "User does not exist");
         strictCheck(await CryptoService.verifyhashedPassword(password, user.password), 401, "Invalid Credentials");
@@ -77,7 +77,7 @@ export default class AuthService{
      * - Retrieve sessionId and generate session
      * - Return login payload
      */
-    async organizationLogin({email, password, ip, hardware}:{email:string, password:string, ip:string, hardware:object}): Promise<LoginPayload> {
+    async organizationLogin({email, password, ip, hardware}:{email:string, password:string, ip:string, hardware:Hardware}): Promise<LoginPayload> {
         
         const organization = strictCheck(await this.orgRepository.getOrganizationByEmail(email), 404, "Organization does not exist");
         strictCheck(await CryptoService.verifyhashedPassword(password, organization.password), 401, "Invalid Credentials");
@@ -89,6 +89,52 @@ export default class AuthService{
             email: organization.email,
             sessionId
         };
+    }
+
+    /**
+     * Retrieves all sessions belonging to entityId
+     * 
+     * Inorder Flow:
+     * - Retrieve all sessions for entity id
+     * - model the session into session Payload
+     * - return the session payload else undefined
+     */
+    async getSessions(currentSessionId:string, entity:{id:string, email:string}): Promise<SessionPayload[] | undefined>{
+        const sessions = await this.sessionRepository.findAllActiveSessionsByEntityId(entity.id);
+
+        const sessionPayload = [];
+        for(const session of sessions){
+            sessionPayload.push({
+                _id:session._id as string,
+                hardware: session.hardware,
+                expiresAt: session.expiresAt,
+                createdAt:session.createdAt,
+                ip: session.ip,
+                isCurrent:currentSessionId === session.sessionId
+            });
+        }
+
+        return sessionPayload.length > 0 ? sessionPayload : undefined;
+    }
+
+    /**
+     * Revokes the session by maskedId(_id)
+     * 
+     * Inorder Flow:
+     * - Revokes the session
+     */
+    async revokeSession(maskedId:string): Promise<void> {
+        strictCheck(await this.sessionRepository.revokeSessionByMaskedId(maskedId), 500, "Internal Server Error");
+    }
+
+    /**
+     * Revokes all sessions except current session
+     * 
+     * Inorder Flow:
+     * - Revokes all sessions
+     */
+    async revokeAllSessions(currentSessionId:string, entityId:string): Promise<void> {
+        strictCheck(await this.sessionRepository.revokeAllSessionsExceptCurrent(currentSessionId, entityId), 500, "Internal Server Error");
     }
 
     /**

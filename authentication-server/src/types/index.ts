@@ -1,4 +1,5 @@
 import "express-serve-static-core";
+import type { Hardware } from "./dbSchema.js";
 
 declare global {
 	namespace NodeJS {
@@ -133,7 +134,16 @@ export interface IdentityPayload {
 }
 
 export interface LinkPayload {
-    entityType: "user" | "organization";
-    entityId: string;
-    action: string;
+	entityType: "user" | "organization";
+	entityId: string;
+	action: string;
+}
+
+export interface SessionPayload {
+	_id: string;
+	hardware: Hardware;
+	createdAt: Date;
+	expiresAt: Date;
+	ip: string;
+	isCurrent: boolean;
 }

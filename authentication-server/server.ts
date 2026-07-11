@@ -99,7 +99,11 @@ async function boot (){
         app.post("/user/login", validationMiddleware.login, authController.userLogin);
         app.post("/org/login", validationMiddleware.login, authController.organizationLogin);
 
-        app.put("/verify-email/:magicToken", validationMiddleware.verifyEmail, authController.verifyEmail);
+        app.get("/sessions", authMiddleware.checkAuthToken, authController.getSessions);
+        app.delete("/revokeSession", authMiddleware.checkAuthToken, validationMiddleware.validateRevokeSession, authController.revokeSession);
+        app.delete("/revokeAllSessions", authMiddleware.checkAuthToken, authController.revokeAllSessions);
+
+        app.put("/verifyEmail/:magicToken", validationMiddleware.verifyEmail, authController.verifyEmail);
 
         app.get("/logout", authMiddleware.checkAuthToken, authController.logout);
 

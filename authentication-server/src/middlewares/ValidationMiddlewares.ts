@@ -364,4 +364,24 @@ export default class ValidationMiddlewares {
 			errorHandling(error, res);
 		}
 	}
+
+	/**
+	 * Validation of revoke session incoming data 
+	 * 
+	 * Inorder Flow:
+	 * - validate and retrieve existing fields from request body
+	 * - pass the control to the next middleware
+	 * 
+	 * @remarks
+	 * checks for _id presence in request body
+	 */
+	validateRevokeSession: RequestHandler = (req, res, next) => {
+		try {
+			this.validateRequiredFields(req, "_id");
+
+			next();
+		} catch (error) {
+			errorHandling(error, res);
+		}
+	}
 }

@@ -79,10 +79,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
 	async function login(entityKind: EntityType, values: LoginSchema): Promise<void> {
 		const endpoint = entityKind === "user" ? API_ROUTES.user.login : API_ROUTES.organization.login;
-		const response = await postRequest(endpoint, values);
+		const response = await postRequest<AuthenticatedEntity>(endpoint, values);
 		if (!response) return;
 
-		if (response.success && response.message) {
+		if (response.success && response.message && response.data) {
 			success("Login successful", response.message);
 			setEntityType(entityKind);
 			setEntity(response.data);
@@ -143,7 +143,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 	}
 
 	async function verifyEmail(magicToken:string):Promise<{type: EntityType} | undefined> {
-		const response = await putRequest(`${API_ROUTES.verifyEmail}/${magicToken}`, {});
+		const response = await putRequest<{type: EntityType}>(`${API_ROUTES.verifyEmail}/${magicToken}`, {});
 		if (!response) return;
 
 		if (!response.success && response.error) {
@@ -151,18 +151,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 			return;
 		}
 
-		if (response.success && response.message) {
+		if (response.success && response.message && response.data) {
 			success("Email verified", response.message);
-			return response.data.type;
+			return response.data;
 		}
 	}
 
 	useEffect(() => {
-		void getRequest(API_ROUTES.whoAmI).then(response => {
+		void getRequest<{ name: string, email: string, type: EntityType }>(API_ROUTES.whoAmI).then(response => {
 			setIsLoading(false);
 			if (!response) return;
 
-			if (response.success && response.message) {
+			if (response.success && response.data) {
 				setEntity({ name: response.data.name, email: response.data.email });
 				setEntityType(response.data.type);
 				return;

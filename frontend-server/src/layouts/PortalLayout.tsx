@@ -8,6 +8,7 @@ import { Outlet, useLocation } from "react-router-dom";
 
 function getPageTitle(pathname: string): string {
 	if (pathname.endsWith("/clients")) return "OAuth Clients";
+	if (pathname.endsWith("/session")) return "Session Management";
 	return "Portal";
 }
 

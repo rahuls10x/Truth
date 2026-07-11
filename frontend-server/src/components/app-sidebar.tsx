@@ -13,7 +13,7 @@ import {
 import { APP_ROUTES, getPortalRoute } from "@/config/routes";
 import { useAuth } from "@/contexts/AuthContext";
 import type { EntityType } from "@/types";
-import { Blocks } from "lucide-react";
+import { Blocks, UserRoundKey } from "lucide-react";
 import { Link, NavLink, useLocation } from "react-router-dom";
 import { Separator } from "./ui/separator";
 import Logo from "@/assets/Logo";
@@ -23,8 +23,13 @@ export function AppSidebar({ entity, ...props }: { entity: EntityType }) {
 	const location = useLocation();
 	const navItems =
 		entity === "user"
-			? []
-			: [{ title: "Clients", url: APP_ROUTES.organization.clients, icon: Blocks }];
+			? [ 
+				{ title: "Session Management", url: APP_ROUTES.user.session, icon: UserRoundKey }
+			]
+			: [
+				{ title: "Clients", url: APP_ROUTES.organization.clients, icon: Blocks },
+				{ title: "Session Management", url: APP_ROUTES.organization.session, icon: UserRoundKey },
+			];
 
 	return (
 		<Sidebar collapsible="icon" {...props}>

@@ -7,13 +7,15 @@ export const APP_ROUTES = {
 	user: {
 		login: "/user/login",
 		signup: "/user/signup",
-		portal: "/user/portal"
+		portal: "/user/portal",
+		session: "/user/portal/session",
 	},
 	organization: {
 		login: "/org/login",
 		signup: "/org/signup",
 		portal: "/org/portal",
 		clients: "/org/portal/clients",
+		session: "/org/portal/session",
 	},
 };
 
@@ -21,8 +23,11 @@ export const API_ROUTES = {
 	whoAmI: "/whoAmI",
 	logout: "/logout",
 	consent: "/consent",
-	verifyEmail: "/verify-email",
+	verifyEmail: "/verifyEmail",
 	authorize: "/authorize",
+	session: "/sessions",
+	revokeSession:"/revokeSession",
+	revokeAllSessions:"/revokeAllSessions",
 	user:{
 		login: "/user/login",
 		signup: "/user/signup",

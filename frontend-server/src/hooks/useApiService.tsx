@@ -1,16 +1,16 @@
 import { useNotification } from "@/contexts/NotificationContext";
 
-export interface APIResponse{
+export interface APIResponse <T = unknown>{
     success: boolean, 
     error?:string, 
     message?:string,
-    data?:any
+    data?:T
 }
 
 export default function useApiService(link: string) {
     const {error} = useNotification();
 
-    const makeRequest = async(type: "GET" | 'POST' | "DELETE" | "PUT" | "PATCH" , path:string, body?:any): Promise<APIResponse | undefined> =>{
+    const makeRequest = async <T = unknown>(type: "GET" | 'POST' | "DELETE" | "PUT" | "PATCH" , path:string, body?:any): Promise<APIResponse<T> | undefined> =>{
         try {
             const response = await fetch(path, {
                 method: type,
@@ -21,27 +21,32 @@ export default function useApiService(link: string) {
                 body: body ? JSON.stringify(body) : null
             });
             const data = await response.json();
-            return data;
+            return data as APIResponse<T>;
         } catch (err) {
             error("Unable to connect to server", "Try again later.");
             console.log(err);
         }
     } 
 
-    const postRequest = async(endpoint: string, body: any) : Promise<APIResponse | undefined> =>{
-        const data = await makeRequest("POST", `${link}${endpoint}`, body);
+    const postRequest = async <T = unknown>(endpoint: string, body: any) : Promise<APIResponse< T >  | undefined> =>{
+        const data = await makeRequest <T>("POST", `${link}${endpoint}`, body);
         return data;
     }
 
-    const putRequest = async(endpoint: string, body: any) : Promise<APIResponse | undefined> =>{
-        const data = await makeRequest("PUT", `${link}${endpoint}`, body);
+    const putRequest = async <T = unknown>(endpoint: string, body: any) : Promise<APIResponse <T> | undefined> =>{
+        const data = await makeRequest<T>("PUT", `${link}${endpoint}`, body);
         return data;
     }
     
-    const getRequest = async(endpoint: string) : Promise<APIResponse | undefined> =>{
-        const data = await makeRequest("GET", `${link}${endpoint}`);
+    const getRequest = async <T = unknown>(endpoint: string) : Promise<APIResponse <T> | undefined> =>{
+        const data = await makeRequest<T>("GET", `${link}${endpoint}`);
         return data;
     }
 
-    return {postRequest, getRequest, putRequest};
+    const deleteRequest = async <T = unknown>(endpoint: string, body: any) : Promise<APIResponse <T> | undefined> =>{
+        const data = await makeRequest<T>("DELETE", `${link}${endpoint}`, body);
+        return data;
+    }
+
+    return {postRequest, getRequest, putRequest, deleteRequest};
 }

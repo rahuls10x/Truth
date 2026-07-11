@@ -1,3 +1,5 @@
+import type { ObjectId } from "mongodb"
+
 export interface Token{
     tokenString:string,
     clientId:string
@@ -8,7 +10,7 @@ export interface Token{
 }
 
 export interface User{
-    _id?:string;
+    _id?: ObjectId | string;
 	userId:string;
 	name:string;
 	email:string;
@@ -19,7 +21,7 @@ export interface User{
 }
 
 export interface Organization{
-    _id?:string;
+    _id?: ObjectId | string;
 	orgId:string;
 	organizationName:string;
 	email:string;
@@ -30,8 +32,25 @@ export interface Organization{
 	
 }
 
+export interface Hardware {
+	client: {
+		name?: string;
+		version?: string;
+		type?: string;
+	};
+	os: {
+		name?: string;
+		version?: string;
+	};
+	device: {
+		type?: string;
+		vendor?: string;
+		model?: string;
+	};
+}
+
 export interface Session{
-    _id?:string;
+    _id?:ObjectId | string;
 	sessionId:string;
 	entityId:string;
     type:"user" | "organization";
@@ -40,7 +59,7 @@ export interface Session{
 	createdAt:Date;
 	expiresAt:Date;
 	ip:string;
-	hardware:object
+	hardware:Hardware
 }
 
 export interface Client{
@@ -55,7 +74,7 @@ export interface Client{
 }
 
 export interface UserConsent{
-    _id?:string;
+    _id?: ObjectId | string;
     userId:string;
     clientId:string;
     createdAt:Date;
