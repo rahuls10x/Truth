@@ -58,6 +58,29 @@ export default class AuthController {
     }
 
     /**
+     * Handles reset password Request
+     * 
+     * Inorder Flow:
+     * - retrive magicToken from request params
+     * - verify email
+     * - structure and send response
+     */
+    resetPassword: RequestHandler = async (req, res) => {
+        try {
+            const magicToken = strictCheck(req.params['magicToken'], 500, "Internal Server Error");
+            const { password } = req.body;
+
+            const data = await this.authService.resetPassword(magicToken as string, password);
+
+            res.status(200).json({
+                success: true,
+                message: "Password has been reset Successfully",
+                data:data
+            });
+        } catch (error) {errorHandling(error, res);}
+    }
+
+    /**
      * Handles get session Request
      * 
      * Inorder Flow: 

@@ -164,6 +164,35 @@ export default class AuthService{
     }
 
     /**
+     * Resets the password
+     * 
+     * Inorder Flow:
+     * - Retrieve linkPayload from cache, delete it and verify its action
+     * - Hash the password
+     * - If user, update the password and return the type
+     * - If organization, update the password and return the type
+     * - Return
+     */
+    async resetPassword(magicToken:string, password:string): Promise<{type: 'user' | 'organization'} | undefined> {
+        const linkPayload = strictCheck(await this.linkRepository.getAndDeleteCachedLink(magicToken), 404, "Invalid reset password link");
+        strictCheck(linkPayload.action === "resetPassword", 404, "Invalid reset password link");
+
+        const hashedPassword = await CryptoService.hashPassword(password);
+
+        if(linkPayload.entityType === "user"){
+            strictCheck(await this.userRepository.updateUserById(linkPayload.entityId, {password: hashedPassword}), 500, "Internal Server Error");
+            return {type : 'user'}
+        }
+        
+        if(linkPayload.entityType === "organization"){
+            strictCheck(await this.orgRepository.updateOrganizationById(linkPayload.entityId, { password: hashedPassword}), 500, "Internal Server Error");
+            return {type : 'organization'}
+        }
+
+        return;
+    }
+
+    /**
      * Logouts the entity
      * 
      * Inorder Flow:

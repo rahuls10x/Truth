@@ -1,7 +1,7 @@
 import { API_ROUTES } from "@/config/routes";
 import useApiService from "@/hooks/useApiService";
 import type { AuthenticatedEntity, EntityType } from "@/types";
-import { type LoginSchema, type OrganizationSignupSchema, type SignupSchema } from "@/types/validation";
+import { ForgotPasswordSchema, ResetPasswordSchema, type LoginSchema, type OrganizationSignupSchema, type SignupSchema } from "@/types/validation";
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import { useNotification } from "./NotificationContext";
 import { useNavigate } from "react-router-dom";
@@ -23,6 +23,8 @@ interface AuthContextType {
 	logout: () => Promise<void>;
 	consent: (values: ConsentRequest, authorizationQuery: URLSearchParams) => Promise<void>;
 	verifyEmail:(magicToken:string) => Promise<{type: EntityType} | undefined>;
+	forgotPassword: (entityType: EntityType, values: ForgotPasswordSchema)=> Promise<boolean | undefined>;
+	resetPassword: (magicToken:string, values: ResetPasswordSchema) => Promise<{type: EntityType} | undefined>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -31,7 +33,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 	const [entity, setEntity] = useState<AuthenticatedEntity | null>(null);
 	const [entityType, setEntityType] = useState<EntityType | null>(null);
 	const [isLoading, setIsLoading] = useState<boolean>(true);
-	const { getRequest, postRequest, putRequest } = useApiService(import.meta.env.VITE_API_URL);
+	const { getRequest, postRequest, putRequest, patchRequest } = useApiService(import.meta.env.VITE_API_URL);
 	const { error, success } = useNotification();
 	const navigate = useNavigate();
 
@@ -142,6 +144,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 		return;
 	}
 
+	async function forgotPassword(entityType: EntityType, values: ForgotPasswordSchema): Promise<boolean | undefined> {
+		const response = await postRequest<undefined>((entityType === 'user' ? API_ROUTES.user.forgotPassword : API_ROUTES.organization.forgotPassword), values); 
+		if (!response) return;
+
+		if (!response.success && response.error) {
+			error("Unable to verify email", response.error);
+			return false;
+		}
+
+		if (response.success && response.message) {
+			success("Password reset link sent", response.message);
+			return true;
+		}
+	}
+
 	async function verifyEmail(magicToken:string):Promise<{type: EntityType} | undefined> {
 		const response = await putRequest<{type: EntityType}>(`${API_ROUTES.verifyEmail}/${magicToken}`, {});
 		if (!response) return;
@@ -153,6 +170,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
 		if (response.success && response.message && response.data) {
 			success("Email verified", response.message);
+			return response.data;
+		}
+	}
+
+	async function resetPassword(magicToken:string, values: ResetPasswordSchema):Promise<{type: EntityType} | undefined> {
+		const response = await patchRequest<{type: EntityType}>(`${API_ROUTES.resetPassword}/${magicToken}`, values);
+		if (!response) return;
+
+		if (!response.success && response.error) {
+			error("Unable to verify email", response.error);
+			return;
+		}
+
+		if (response.success && response.message && response.data) {
+			success("Password has been changed", response.message);
 			return response.data;
 		}
 	}
@@ -188,7 +220,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 				organizationSignup,
 				logout,
 				consent,
-				verifyEmail
+				verifyEmail, 
+				forgotPassword,
+				resetPassword,
 			}}
 		>
 			{children}

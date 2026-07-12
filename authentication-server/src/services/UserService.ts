@@ -51,6 +51,23 @@ export default class UserService {
 	}
 
 	/**
+	 * Creates and send Password reset link
+	 * 
+	 * Inorder Flow:
+	 * - Retrieve and check the user by email
+	 * - create magic token and emails it
+	 * - returns true
+	 */
+	async forgotPassword( email: string ):Promise<true> {
+		const userObject = strictCheck(await this.userRepository.getUserByEmail(email), 409, "User does not exist");
+		
+		const magicToken = await this.linkService.createMagicToken(userObject.userId, "user", "resetPassword");
+		await this.mailService.sendPasswordResetEmail(email, magicToken);
+
+		return true;
+	}
+
+	/**
 	 * Provides User profile details DTO 
 	 * 
 	 * Inorder Flow:

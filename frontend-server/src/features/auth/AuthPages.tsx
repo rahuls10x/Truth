@@ -10,8 +10,10 @@ import { APP_ROUTES, getLoginRoute } from "@/config/routes";
 import { useAuth } from "@/contexts/AuthContext";
 import type { EntityType } from "@/types";
 import {
+	ForgotPasswordSchema,
 	LoginSchema,
 	OrganizationSignupSchema,
+	ResetPasswordSchema,
 	SignupSchema,
 	type LoginSchema as LoginValues,
 	type OrganizationSignupSchema as OrganizationSignupValues,
@@ -28,14 +30,24 @@ import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom"
 interface PasswordFieldProps extends Omit<ComponentProps<typeof Input>, "type"> {
 	label: string;
 	error?: string;
+	resetLink?: string;
 }
 
-function PasswordField({ id, label, error, ...props }: PasswordFieldProps) {
+function PasswordField({ id, label, error, resetLink, ...props }: PasswordFieldProps) {
 	const [isVisible, setIsVisible] = useState(false);
 
 	return (
 		<Field data-invalid={Boolean(error)}>
-			<FieldLabel htmlFor={id}>{label}</FieldLabel>
+			<div className="w-full flex items-center">
+				<FieldLabel htmlFor={id} className="grow">
+					{label}
+				</FieldLabel>
+				{resetLink && (
+					<Link to={resetLink} className="font-medium text-xs text-foreground underline-offset-4 hover:underline">
+						Forgot Password
+					</Link>
+				)}
+			</div>
 			<InputGroup>
 				<InputGroupInput
 					id={id}
@@ -127,6 +139,7 @@ function LoginPage({ entityType }: { entityType: EntityType }) {
 	const isUser = entityType === "user";
 	const login = isUser ? auth.userLogin : auth.organizationLogin;
 	const signupPath = isUser ? APP_ROUTES.user.signup : APP_ROUTES.organization.signup;
+	const resetPasswordPath = isUser ? APP_ROUTES.user.forgotPassword : APP_ROUTES.organization.forgotPassword;
 	const alternateLoginPath = isUser ? APP_ROUTES.organization.login : APP_ROUTES.user.login;
 	const {
 		register,
@@ -167,12 +180,55 @@ function LoginPage({ entityType }: { entityType: EntityType }) {
 						id={`${entityType}-login-password`}
 						label="Password"
 						autoComplete="current-password"
+						resetLink={resetPasswordPath}
 						error={errors.password?.message}
 						{...register("password")}
 					/>
 					<SubmitButton isSubmitting={isSubmitting} label="Login" />
 					<Button variant={"ghost"} asChild>
 						<Link to={alternateLoginPath}>{isUser ? "Organization" : "User"} Login</Link>
+					</Button>
+				</FieldGroup>
+			</form>
+		</AuthInterface>
+	);
+}
+
+function ForgotPassword({ entityType }: { entityType: EntityType }) {
+	const loginLink = getLoginRoute(entityType);
+	const { forgotPassword } = useAuth();
+	const {
+		register,
+		handleSubmit,
+		formState: { errors, isSubmitting },
+	} = useForm<ForgotPasswordSchema>({
+		resolver: zodResolver(ForgotPasswordSchema),
+		defaultValues: { email: "" },
+	});
+
+	async function handleForgotPassword(values: ForgotPasswordSchema) {
+		console.log(values);
+		await forgotPassword(entityType, values);
+	}
+
+	return (
+		<AuthInterface title="Forgot Password" description="We'll email you password reset link" footer="">
+			<form onSubmit={handleSubmit(handleForgotPassword)} noValidate>
+				<FieldGroup>
+					<Field data-invalid={Boolean(errors.email)}>
+						<FieldLabel htmlFor={`${entityType}-login-email`}>{entityType === "user" ? "User email" : "Organization email"}</FieldLabel>
+						<Input
+							id={`${entityType}-login-email`}
+							type="email"
+							autoComplete="email"
+							aria-invalid={Boolean(errors.email)}
+							{...register("email")}
+						/>
+						<FieldError>{errors.email?.message}</FieldError>
+					</Field>
+					<SubmitButton isSubmitting={isSubmitting} label="Send link" />
+					<Button variant={"ghost"} asChild>
+						<Link to={loginLink}> Login instead</Link>
 					</Button>
 				</FieldGroup>
 			</form>
@@ -187,6 +243,14 @@ export function UserLoginPage() {
 
 export function OrganizationLoginPage() {
 	return <LoginPage entityType="organization" />;
+}
+
+export function UserForgotPasswordPage() {
+	return <ForgotPassword entityType="user" />;
+}
+
+export function OrganizationForgotPasswordPage() {
+	return <ForgotPassword entityType="organization" />;
 }
 
 export function UserSignupPage() {
@@ -397,7 +461,7 @@ export function ConsentPage() {
 	);
 }
 
-export function verifyEmailPage() {
+export function VerifyEmailPage() {
 	const [status, setStatus] = useState<{type: "user" | "organization"} | undefined>(undefined);
 	const navigate = useNavigate();
 	const { magicToken } = useParams();
@@ -409,9 +473,9 @@ export function verifyEmailPage() {
 		setStatus(await verifyEmail(magicToken));
 	}
 
-	useEffect(()=>{
+	useEffect(() => {
 		handleVerify();
-	},[]);
+	}, []);
 
 	return (
 		<AuthInterface title={"Email Verification"} description="" footer="">
@@ -429,7 +493,11 @@ export function verifyEmailPage() {
 						</EmptyDescription>
 					</EmptyHeader>
 					<EmptyContent>
-						{status && <Button variant="outline" onClick={() => navigate(getLoginRoute(status?.type))}>Login</Button>}
+						{status && (
+							<Button variant="outline" onClick={() => navigate(getLoginRoute(status?.type))}>
+								Login
+							</Button>
+						)}
 					</EmptyContent>
 				</Empty>
 			)}
@@ -446,6 +514,87 @@ export function verifyEmailPage() {
 						</Button>
 					</EmptyContent>
 				</Empty>
+			)}
+		</AuthInterface>
+	);
+}
+
+export function ResetPasswordPage() {
+	const [status, setStatus] = useState<{ type: "user" | "organization" } | undefined>(undefined);
+	const navigate = useNavigate();
+	const { magicToken } = useParams();
+	const isValidRequest = magicToken && magicToken.startsWith("mt");
+	const { resetPassword } = useAuth();
+	const {
+		register,
+		handleSubmit,
+		formState: { errors, isSubmitting },
+	} = useForm<ResetPasswordSchema>({
+		resolver: zodResolver(ResetPasswordSchema),
+		defaultValues: { password: "", confirmPassword: "" },
+	});
+
+	async function handleResetPassword(values: ResetPasswordSchema) {
+		if (!isValidRequest) return;
+		setStatus(await resetPassword(magicToken, values));
+	}
+
+	return (
+		<AuthInterface title={"Reset Password"} description={!isSubmitting ? "" : "Enter your new password below"} footer="">
+			{(status || isSubmitting ) && (
+				<Empty className="w-full">
+					<EmptyHeader>
+						<EmptyMedia className="size-10">
+							{status ? <CircleCheckIcon className="size-6" /> : <Spinner className="size-6" />}
+						</EmptyMedia>
+						<EmptyTitle className="font-heading text-lg">{status ? "Password has been reset" : "Processing your request"}</EmptyTitle>
+						<EmptyDescription className="font-subheading text-sm">
+							{status
+								? "Your Password has been successfully reset. Visit to login page"
+								: "Please wait while we process your request. Do not refresh the page."}
+						</EmptyDescription>
+					</EmptyHeader>
+					<EmptyContent>
+						{status && (
+							<Button variant="outline" onClick={() => navigate(getLoginRoute(status?.type))}>
+								Login
+							</Button>
+						)}
+					</EmptyContent>
+				</Empty>
+			)}
+			{!isValidRequest && (
+				<Empty>
+					<EmptyHeader>
+						<EmptyDescription className="font-subheading text-base text-muted-foreground">
+							Caught you! Trying funny things are we?
+						</EmptyDescription>
+					</EmptyHeader>
+					<EmptyContent>
+						<Button asChild>
+							<Link to={APP_ROUTES.root}>Return Home</Link>
+						</Button>
+					</EmptyContent>
+				</Empty>
+			)}
+			{!isSubmitting && !status && isValidRequest && (
+				<form onSubmit={handleSubmit(handleResetPassword)}>
+					<FieldGroup>
+						<PasswordField
+							id="password"
+							label="Password"
+							autoComplete="new-password"
+							error={errors.password?.message}
+							{...register("password")}
+						/>
+						<Field>
+							<FieldLabel htmlFor="confirm-password">Confirm password</FieldLabel>
+							<Input id="confirm-password" type="password" {...register("confirmPassword")} />
+							<FieldError>{errors.confirmPassword?.message}</FieldError>
+						</Field>
+						<SubmitButton isSubmitting={isSubmitting} label="Reset Password" />
+					</FieldGroup>
+				</form>
 			)}
 		</AuthInterface>
 	);

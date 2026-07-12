@@ -156,6 +156,56 @@ export default class ValidationMiddlewares {
 	};
 
 	/**
+	 * Validation of forgot password incoming data 
+	 * 
+	 * Inorder Flow:
+	 * - validate and retrieve existing fields from request body
+	 * - validate each field
+	 * - convert email to lowercase and trim extra white spaces
+	 * - pass the control to the next middleware
+	 * 
+	 * @remarks
+	 * checks for email in request body
+	 */
+	forgotPassword: RequestHandler = (req, res, next) => {
+		try{
+			this.validateRequiredFields(req, 'email');
+			const {email} = req.body;
+
+			this.validateData('email', email);
+
+			req.body.email = email.toLowerCase().trim();
+
+			next();
+		}catch(err){errorHandling(err, res);};
+	}
+
+	/**
+	 * Validation of reset password incoming data 
+	 * 
+	 * Inorder Flow:
+	 * - validate and retrieve existing fields from request body and params
+	 * - validate each field
+	 * - pass the control to the next middleware
+	 * 
+	 * @remarks
+	 * checks for password, magicToken in request body, params
+	 */
+	resetPassword: RequestHandler = (req, res, next) => {
+		try{
+			this.validateRequiredFields(req, 'password');
+			this.validateRequiredParams(req, 'magicToken');
+			const { magicToken } = req.params;
+			const { password } = req.body;
+
+			this.validateData('magicToken', magicToken);
+			this.validateData('password', password);
+
+			next();
+		}catch(err){errorHandling(err, res);};
+	}
+	
+	/**
 	 * Validation of consent incoming data 
 	 * 
 	 * Inorder Flow:

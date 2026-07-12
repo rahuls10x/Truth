@@ -1,4 +1,4 @@
-import z from "zod";
+import z, { email } from "zod";
 
 export const SignupSchema = z
 	.object({
@@ -35,6 +35,22 @@ export const LoginSchema = z.object({
 	password: z.string({ message: "Password should be a valid string" }).min(8, "Password should be at least 8 characters long"),
 });
 
+export const ForgotPasswordSchema = z.object({
+	email: z.email({ message: "Enter a valid email address" }),
+});
+
+export const ResetPasswordSchema = z
+	.object({
+		password: z
+			.string({ message: "Password should be a valid string" })
+			.regex(
+				/^(?=.*\d)(?=.*[A-Z])(?=.*[a-z])(?=.*[^\w\d\s:]).{8,32}$/,
+				"Password should be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, one digit, and one special character",
+			),
+		confirmPassword: z.string({ message: "Password should be a valid string" }).min(8, "Password should be at least 8 characters long"),
+	})
+	.refine(data => data.password === data.confirmPassword, { message: "Passwords do not match", path: ["confirmPassword"] });
+
 export const ProfileSchema = z.object({
 	name: z.string({ message: "Name must be a string" }).min(2, "Invalid Name."),
 	email: z.email("Invalid email address.").trim(),
@@ -59,3 +75,5 @@ export type SignupSchema = z.infer<typeof SignupSchema>;
 export type OrganizationSignupSchema = z.infer<typeof OrganizationSignupSchema>;
 export type LoginSchema = z.infer<typeof LoginSchema>;
 export type ProfileSchema = z.infer<typeof ProfileSchema>;
+export type ResetPasswordSchema = z.infer<typeof ResetPasswordSchema>;
+export type ForgotPasswordSchema = z.infer<typeof ForgotPasswordSchema>;

@@ -37,6 +37,11 @@ export default function useApiService(link: string) {
         const data = await makeRequest<T>("PUT", `${link}${endpoint}`, body);
         return data;
     }
+
+    const patchRequest = async <T = unknown>(endpoint: string, body: any) : Promise<APIResponse <T> | undefined> =>{
+        const data = await makeRequest<T>("PATCH", `${link}${endpoint}`, body);
+        return data;
+    }
     
     const getRequest = async <T = unknown>(endpoint: string) : Promise<APIResponse <T> | undefined> =>{
         const data = await makeRequest<T>("GET", `${link}${endpoint}`);
@@ -48,5 +53,5 @@ export default function useApiService(link: string) {
         return data;
     }
 
-    return {postRequest, getRequest, putRequest, deleteRequest};
+    return {postRequest, getRequest, putRequest, patchRequest, deleteRequest};
 }

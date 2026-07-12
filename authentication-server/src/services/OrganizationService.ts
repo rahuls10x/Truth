@@ -67,6 +67,23 @@ export default class OrganizationService {
 	}
 
 	/**
+	 * Creates and send Password reset link
+	 * 
+	 * Inorder Flow:
+	 * - Retrieve and check the organization by email
+	 * - create magic token and emails it
+	 * - returns true
+	 */
+	async forgotPassword( email: string ):Promise<true> {
+		const organizationObject = strictCheck(await this.orgRepository.getOrganizationByEmail(email), 409, "Organization does not exist");
+		
+		const magicToken = await this.linkService.createMagicToken(organizationObject.orgId, "organization", "resetPassword");
+		await this.mailService.sendPasswordResetEmail(email, magicToken);
+
+		return true;
+	}
+
+	/**
 	 * Provides clients DTO for an organization
 	 *
 	 * Inorder Flow:

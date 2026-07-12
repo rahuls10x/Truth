@@ -38,6 +38,29 @@ export default class OrganizationController {
 	};
 
 	/**
+	 * Handles forgot password request
+	 *
+	 * Inorder Flow:
+	 * - retrieve email from request body
+	 * - generate and sent reset link
+	 * - structure and send a response
+	 */
+	forgotPassword: RequestHandler = async (req, res) => {
+		try {
+			const { email }: { email: string } = req.body;
+
+            await this.orgService.forgotPassword(email);
+
+			res.status(200).json({
+				success: true,
+				message: "Password reset link has been sent Successfully",
+			});
+		} catch (error) {
+			errorHandling(error, res);
+		}
+	};
+
+	/**
 	 * Handles get clients request
 	 * 
 	 * Inorder Flow: 

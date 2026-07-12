@@ -15,4 +15,15 @@ export default class MailService{
         const verificationLink = `${this.originUrl}/verify-email/${magicToken}`;
         console.log(verificationLink);
     }
+
+    /**
+     * Sends password reset email
+     * 
+     * Inorder Flow:
+     * - Create and Log the verification link
+     */
+    async sendPasswordResetEmail(_email:string, magicToken:string){
+        const resetLink = `${this.originUrl}/reset-password/${magicToken}`;
+        console.log(resetLink);
+    }
 }
