@@ -48,19 +48,24 @@ export function NotFoundPage() {
 export function SessionPage() {
 	const [sessionsData, setSessionsData] = useState<Session[] | undefined>(undefined);
 	const { sessions, revokeSession, revokeAllSessions } = useApplication();
+	const [isLoadingId, setIsLoadingId] = useState<boolean | string>(false);
 
 	async function handleRevokeSession(_id: string) {
+		setIsLoadingId(_id);
 		const status = await revokeSession(_id);
 		if (status) {
 			setSessionsData(prev => (prev || []).filter(session => session._id !== _id));
 		}
+		setIsLoadingId(false);
 	}
-	
+
 	async function handleRevokeAllSessions() {
+		setIsLoadingId(true);
 		const status = await revokeAllSessions();
 		if (status) {
 			setSessionsData(prev => (prev || []).filter(session => session.isCurrent));
 		}
+		setIsLoadingId(false);
 	}
 
 	useEffect(() => {
@@ -119,7 +124,15 @@ export function SessionPage() {
 								</div>
 							</CardContent>
 							<CardFooter>
-								<Button variant={session.isCurrent ? 'ghost' : 'default'} disabled={session.isCurrent} onClick={() => handleRevokeSession(session._id)}>{session.isCurrent ? "Active" :  "Revoke"}</Button>
+								<Button
+									variant={session.isCurrent ? "ghost" : "default"}
+									disabled={session.isCurrent || isLoadingId === session._id || isLoadingId === true}
+									onClick={() => handleRevokeSession(session._id)}
+								>
+									{session.isCurrent && "Active"} 
+									{!session.isCurrent && (isLoadingId !== session._id && isLoadingId !== true) && "Revoke"}
+									{(isLoadingId === session._id || isLoadingId === true) && !session.isCurrent && "Revoking..." }
+								</Button>
 							</CardFooter>
 						</Card>
 					))}
