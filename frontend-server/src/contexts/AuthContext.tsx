@@ -206,6 +206,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 				error("Automatic login failed", response.error);
 			}
 		});
+		setEntity({name:'Test', email: 'Test@email.com'});
+		setEntityType('user');
 	}, []);
 
 	return (

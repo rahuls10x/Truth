@@ -388,7 +388,7 @@ export function ConsentPage() {
 	const code_challenge = searchParams.get("challenge_method");
 	const scopes = (searchParams.get("scopes") ?? "").trim().split(/\s+/).filter(Boolean);
 	const clientName = searchParams.get("client_name");
-
+	const [isLoading, setIsLoading] = useState<"granted" | "denied" | false>(false);
 	const { entity, consent } = useAuth();
 	const isValidRequest = Boolean(
 		clientId && clientName && redirectUri && responseType && challengeMethod === "S256" && code_challenge && scopes.length > 0,
@@ -399,6 +399,7 @@ export function ConsentPage() {
 	}
 
 	async function handleConsent(isGranted: boolean) {
+		setIsLoading(isGranted ? "granted" : "denied");
 		await consent(
 			{
 				consent: isGranted,
@@ -407,6 +408,7 @@ export function ConsentPage() {
 			},
 			searchParams,
 		);
+		setIsLoading(false);
 	}
 
 	return (
@@ -448,11 +450,11 @@ export function ConsentPage() {
 						</ul>
 					</CardContent>
 					<CardFooter className="gap-3 bg-transparent">
-						<Button disabled={!isValidRequest} className="grow" onClick={() => void handleConsent(true)}>
-							Authorize
+						<Button disabled={Boolean(isLoading)} className="grow" onClick={() => void handleConsent(true)}>
+							Authorize {isLoading === "granted" && <LoaderCircleIcon className="animate-spin" />}
 						</Button>
-						<Button variant="outline" className="" disabled={!isValidRequest} onClick={() => void handleConsent(false)}>
-							Cancel
+						<Button variant="outline" className="" disabled={Boolean(isLoading)} onClick={() => void handleConsent(false)}>
+							Cancel {isLoading === "denied" && <LoaderCircleIcon className="animate-spin" />}
 						</Button>
 					</CardFooter>
 				</Card>
