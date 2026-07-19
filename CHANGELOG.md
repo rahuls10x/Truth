@@ -18,6 +18,7 @@ The Following rules must be followed at all times
 - Added Session management feature
 - Added Forgot and Reset Password feature
 - Added Loading States to Session management page
+- Added Error States
 
 ### Changed
 - Improvised the UI for all Pages

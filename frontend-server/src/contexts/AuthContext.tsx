@@ -197,13 +197,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 			if (response.success && response.data) {
 				setEntity({ name: response.data.name, email: response.data.email });
 				setEntityType(response.data.type);
+				success("Login successful", response.message ?? "Your session has started.");
 				return;
 			}
 
 			if (!response.success && response.error) {
 				setEntity(null);
 				setEntityType(null);
-				error("Automatic login failed", response.error);
 			}
 		});
 	}, []);

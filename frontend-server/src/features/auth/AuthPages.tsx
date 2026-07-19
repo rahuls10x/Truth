@@ -20,7 +20,7 @@ import {
 	type SignupSchema as SignupValues,
 } from "@/types/validation";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { CircleCheckIcon, EyeIcon, EyeOffIcon, LoaderCircleIcon } from "lucide-react";
+import { CircleCheckIcon, CircleXIcon, EyeIcon, EyeOffIcon, LoaderCircleIcon } from "lucide-react";
 import { useEffect, useState, type ComponentProps, type ReactNode } from "react";
 import { useForm } from "react-hook-form";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
@@ -71,7 +71,7 @@ function PasswordField({ id, label, error, resetLink, ...props }: PasswordFieldP
 
 function SubmitButton({ isSubmitting, label }: { isSubmitting: boolean; label: string }) {
 	return (
-		<Button type="submit" disabled={isSubmitting} className="font-button font-semibold">
+		<Button type="submit" disabled={isSubmitting} className="font-button font-semibold grow">
 			{isSubmitting && <LoaderCircleIcon className="animate-spin" />}
 			{isSubmitting ? "Please wait" : label}
 		</Button>
@@ -309,6 +309,7 @@ export function UserSignupPage() {
 }
 
 export function OrganizationSignupPage() {
+	const [step, setStep] = useState<number>(1);
 	const { organizationSignup } = useAuth();
 	const {
 		register,
@@ -318,6 +319,13 @@ export function OrganizationSignupPage() {
 		resolver: zodResolver(OrganizationSignupSchema),
 		defaultValues: { userName: "", organizationName: "", domain: "", email: "", password: "", confirmPassword: "" },
 	});
+
+	const nextStep = () => {
+		if (step < 3) setStep(step + 1);
+	};
+	const prevStep = () => {
+		if (step > 1) setStep(step - 1);
+	};
 
 	return (
 		<AuthInterface
@@ -334,45 +342,67 @@ export function OrganizationSignupPage() {
 		>
 			<form onSubmit={handleSubmit(organizationSignup)} noValidate>
 				<FieldGroup>
-					<Field data-invalid={Boolean(errors.userName)}>
-						<FieldLabel htmlFor="name">Administrator name</FieldLabel>
-						<Input id="name" autoComplete="name" aria-invalid={Boolean(errors.userName)} {...register("userName")} />
-						<FieldError>{errors.userName?.message}</FieldError>
-					</Field>
-					<Field data-invalid={Boolean(errors.organizationName)}>
-						<FieldLabel htmlFor="organization-name">Organization name</FieldLabel>
-						<Input
-							id="organization-name"
-							autoComplete="organization"
-							aria-invalid={Boolean(errors.organizationName)}
-							{...register("organizationName")}
-						/>
-						<FieldError>{errors.organizationName?.message}</FieldError>
-					</Field>
-					<Field data-invalid={Boolean(errors.domain)}>
-						<FieldLabel htmlFor="organization-domain">Domain</FieldLabel>
-						<Input id="organization-domain" placeholder="example.com" aria-invalid={Boolean(errors.domain)} {...register("domain")} />
-						<FieldError>{errors.domain?.message}</FieldError>
-					</Field>
-					<Field data-invalid={Boolean(errors.email)}>
-						<FieldLabel htmlFor="email">Administrator email</FieldLabel>
-						<Input id="email" type="email" autoComplete="email" aria-invalid={Boolean(errors.email)} {...register("email")} />
-						<FieldError>{errors.email?.message}</FieldError>
-					</Field>
-					<PasswordField
-						id="password"
-						label="Password"
-						autoComplete="new-password"
-						error={errors.password?.message}
-						{...register("password")}
-					/>
-					<Field>
-						<FieldLabel htmlFor="confirm-password">Confirm password</FieldLabel>
-						<Input id="confirm-password" type="password" {...register("confirmPassword")} />
-						<FieldError>{errors.confirmPassword?.message}</FieldError>
-					</Field>
+					{step === 1 && (
+						<Field data-invalid={Boolean(errors.userName)}>
+							<FieldLabel htmlFor="name">Administrator name</FieldLabel>
+							<Input id="name" autoComplete="name" aria-invalid={Boolean(errors.userName)} {...register("userName")} />
+							<FieldError>{errors.userName?.message}</FieldError>
+						</Field>
+					)}
+					{step === 1 && (
+						<Field data-invalid={Boolean(errors.email)}>
+							<FieldLabel htmlFor="email">Administrator email</FieldLabel>
+							<Input id="email" type="email" autoComplete="email" aria-invalid={Boolean(errors.email)} {...register("email")} />
+							<FieldError>{errors.email?.message}</FieldError>
+						</Field>
+					)}
 
-					<SubmitButton isSubmitting={isSubmitting} label="Create organization" />
+					{step === 2 && (
+						<Field data-invalid={Boolean(errors.organizationName)}>
+							<FieldLabel htmlFor="organization-name">Organization name</FieldLabel>
+							<Input
+								id="organization-name"
+								autoComplete="organization"
+								aria-invalid={Boolean(errors.organizationName)}
+								{...register("organizationName")}
+							/>
+							<FieldError>{errors.organizationName?.message}</FieldError>
+						</Field>
+					)}
+					{step === 2 && (
+						<Field data-invalid={Boolean(errors.domain)}>
+							<FieldLabel htmlFor="organization-domain">Domain</FieldLabel>
+							<Input id="organization-domain" placeholder="example.com" aria-invalid={Boolean(errors.domain)} {...register("domain")} />
+							<FieldError>{errors.domain?.message}</FieldError>
+						</Field>
+					)}
+
+					{step === 3 && (
+						<PasswordField
+							id="password"
+							label="Password"
+							autoComplete="new-password"
+							error={errors.password?.message}
+							{...register("password")}
+						/>
+					)}
+					{step === 3 && (
+						<Field>
+							<FieldLabel htmlFor="confirm-password">Confirm password</FieldLabel>
+							<Input id="confirm-password" type="password" {...register("confirmPassword")} />
+							<FieldError>{errors.confirmPassword?.message}</FieldError>
+						</Field>
+					)}
+
+					<div className="flex mt-4 gap-2">
+						<Button type="button" onClick={prevStep} disabled={step === 1} variant="outline" className="">
+							Previous
+						</Button>
+						{step < 3 && <Button type="button" onClick={nextStep} disabled={step === 3} className="ml-auto grow">
+							Next
+						</Button>}
+						{step === 3 && <SubmitButton isSubmitting={isSubmitting} label="Create organization" />}
+					</div>
 				</FieldGroup>
 			</form>
 		</AuthInterface>
@@ -464,7 +494,7 @@ export function ConsentPage() {
 }
 
 export function VerifyEmailPage() {
-	const [status, setStatus] = useState<{type: "user" | "organization"} | undefined>(undefined);
+	const [status, setStatus] = useState<{ type: "user" | "organization" } | "error" | undefined>(undefined);
 	const navigate = useNavigate();
 	const { magicToken } = useParams();
 	const isValidRequest = magicToken && magicToken.startsWith("mt");
@@ -472,7 +502,7 @@ export function VerifyEmailPage() {
 
 	async function handleVerify() {
 		if (!isValidRequest) return;
-		setStatus(await verifyEmail(magicToken));
+		setStatus((await verifyEmail(magicToken)) ?? "error");
 	}
 
 	useEffect(() => {
@@ -485,17 +515,23 @@ export function VerifyEmailPage() {
 				<Empty className="w-full">
 					<EmptyHeader>
 						<EmptyMedia className="size-10">
-							{status ? <CircleCheckIcon className="size-6" /> : <Spinner className="size-6" />}
+							{status && status !== "error" && <CircleCheckIcon className="size-6" />}
+							{!status && <Spinner className="size-6 animate-spin" />}
+							{status === "error" && <CircleXIcon className="size-6" />}
 						</EmptyMedia>
-						<EmptyTitle className="font-heading text-lg">{status ? "Email verified" : "Processing your request"}</EmptyTitle>
+						<EmptyTitle className="font-heading text-lg">
+							{status && status !== "error" && "Email verified"}
+							{!status && "Processing your request"}
+							{status === "error" && "Something went wrong"}
+						</EmptyTitle>
 						<EmptyDescription className="font-subheading text-sm">
-							{status
-								? "Your email has been successfully verified. Visit to login page"
-								: "Please wait while we process your request. Do not refresh the page."}
+							{status && status !== "error" && "Your email has been successfully verified. Visit to login page"}
+							{!status && "Please wait while we process your request. Do not refresh the page."}
+							{status === "error" && "Something went wrong. Please try again."}
 						</EmptyDescription>
 					</EmptyHeader>
 					<EmptyContent>
-						{status && (
+						{status && status !== "error" && (
 							<Button variant="outline" onClick={() => navigate(getLoginRoute(status?.type))}>
 								Login
 							</Button>
@@ -522,7 +558,7 @@ export function VerifyEmailPage() {
 }
 
 export function ResetPasswordPage() {
-	const [status, setStatus] = useState<{ type: "user" | "organization" } | undefined>(undefined);
+	const [status, setStatus] = useState<{ type: "user" | "organization" } | "error" | undefined>(undefined);
 	const navigate = useNavigate();
 	const { magicToken } = useParams();
 	const isValidRequest = magicToken && magicToken.startsWith("mt");
@@ -538,26 +574,32 @@ export function ResetPasswordPage() {
 
 	async function handleResetPassword(values: ResetPasswordSchema) {
 		if (!isValidRequest) return;
-		setStatus(await resetPassword(magicToken, values));
+		setStatus((await resetPassword(magicToken, values)) ?? "error");
 	}
 
 	return (
 		<AuthInterface title={"Reset Password"} description={!isSubmitting ? "" : "Enter your new password below"} footer="">
-			{(status || isSubmitting ) && (
+			{(status || isSubmitting) && (
 				<Empty className="w-full">
 					<EmptyHeader>
 						<EmptyMedia className="size-10">
-							{status ? <CircleCheckIcon className="size-6" /> : <Spinner className="size-6" />}
+							{status && status !== "error" && <CircleCheckIcon className="size-6" />}
+							{!status && <Spinner className="size-6 animate-spin" />}
+							{status === "error" && <CircleXIcon className="size-6" />}
 						</EmptyMedia>
-						<EmptyTitle className="font-heading text-lg">{status ? "Password has been reset" : "Processing your request"}</EmptyTitle>
+						<EmptyTitle className="font-heading text-lg">
+							{status && status !== "error" && "Password has been reset"}
+							{!status && "Processing your request"}
+							{status === "error" && "Something went wrong"}
+						</EmptyTitle>
 						<EmptyDescription className="font-subheading text-sm">
-							{status
-								? "Your Password has been successfully reset. Visit to login page"
-								: "Please wait while we process your request. Do not refresh the page."}
+							{status && status !== "error" && "Your Password has been successfully reset. Visit to login page"}
+							{!status && "Please wait while we process your request. Do not refresh the page."}
+							{status === "error" && "Something went wrong. Please try again."}
 						</EmptyDescription>
 					</EmptyHeader>
 					<EmptyContent>
-						{status && (
+						{status && status !== "error" && (
 							<Button variant="outline" onClick={() => navigate(getLoginRoute(status?.type))}>
 								Login
 							</Button>
