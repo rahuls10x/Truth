@@ -128,7 +128,9 @@ export default function ClientsPage() {
 									placeholder="name email"
 									aria-invalid={Boolean(errors.scopes)}
 									{...register("scopes", {
-										setValueAs: (value: string) => (value.length > 0 ? value.trim().split(" ").filter(Boolean) : []),
+										setValueAs: (value: string) => {
+											return (value.length > 0 && typeof value === "string" ? value.trim().split(" ").filter(Boolean) : [])
+										},
 									})}
 								/>
 								<p className="text-xs text-muted-foreground">Separate scopes with spaces.</p>

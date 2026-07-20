@@ -49,7 +49,7 @@ export function AppSidebar({ entity, ...props }: { entity: EntityType }) {
 			</SidebarHeader>
 			<SidebarContent>
 				<SidebarGroup>
-					<SidebarMenu>
+					<SidebarMenu className="gap-1.5">
 						{navItems.map(item => (
 							<SidebarMenuItem key={item.url}>
 								<SidebarMenuButton isActive={location.pathname === item.url} tooltip={item.title} className="text-base font-button" asChild>

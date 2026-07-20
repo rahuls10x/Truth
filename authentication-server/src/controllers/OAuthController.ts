@@ -46,6 +46,7 @@ export default class OAuthController {
 
 			const redirectUrl = await this.oAuthService.authorize({ ...authorizationQuery, userId });
 
+			console.log(redirectUrl);
 			res.status(302).redirect(redirectUrl);
 			// res.status(200).json({ redirectUrl });
 		} catch (error) {

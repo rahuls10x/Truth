@@ -416,7 +416,7 @@ export function ConsentPage() {
 	const responseType = searchParams.get("response_type");
 	const challengeMethod = searchParams.get("challenge_method");
 	const code_challenge = searchParams.get("challenge_method");
-	const scopes = (searchParams.get("scopes") ?? "").trim().split(/\s+/).filter(Boolean);
+	const scopes = (searchParams.get("scope") ?? "").trim().split(/\s+/).filter(Boolean);
 	const clientName = searchParams.get("client_name");
 	const [isLoading, setIsLoading] = useState<"granted" | "denied" | false>(false);
 	const { entity, consent } = useAuth();

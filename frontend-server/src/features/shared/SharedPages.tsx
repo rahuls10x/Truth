@@ -73,7 +73,6 @@ export function SessionPage() {
 			const response = await sessions();
 			if (response) {
 				setSessionsData(response);
-				console.log(response);
 			}
 		}
 

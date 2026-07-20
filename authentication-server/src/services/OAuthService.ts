@@ -23,18 +23,20 @@ export default class OAuthService {
 	 *  Creates and retrieves a consent url
 	 * 
 	 * Inorder Flow:
-	 * - creates consent page url and return it
+	 * - creates consent page url,attach client name and return it
 	 */
-	private createConsentUrl(oAuthQuery: AuthorizationQuery): string {
+	private createConsentUrl(oAuthQuery: AuthorizationQuery, clientName:string): string {
 		const urlParams = new URLSearchParams({
 			client_id: oAuthQuery.clientId,
 			redirect_uri: oAuthQuery.redirectUri,
 			response_type: oAuthQuery.responseType,
 			state: oAuthQuery.state,
+			scope: oAuthQuery.scope.join(" "),
 			challenge_method: oAuthQuery.challengeMethod,
 			code_challenge: oAuthQuery.codeChallenge,
+			client_name:clientName
 		});
-		return `http://localhost:4000/consent?${urlParams.toString()}`;// change this url later
+		return `${process.env.ORIGIN_URL}/consent?${urlParams.toString()}`;// change this url later
 	}
 
 	/**
@@ -153,7 +155,7 @@ export default class OAuthService {
 	 * - checks if redirect uri and response type are valid
 	 * - retrieves the waiver if it exists
 	 * - checks if waiver exists and if scopes match then issue authorization code (Waiver exists)
-	 * - create consent page url and returns it (Waiver does not exist)
+	 * - create consent page url along with client name and returns it (Waiver does not exist)
 	 */
 	async authorize(oAuthQuery: AuthorizationQuery): Promise<string> {
 		const client = strictCheck(await this.clientRepository.findByClientId(oAuthQuery.clientId), 400, "Client not found");
@@ -167,7 +169,7 @@ export default class OAuthService {
 			return await this.issueAuthorizationCode(oAuthQuery); //waiver exists
 		}
 
-		const consentUrl = this.createConsentUrl(oAuthQuery);
+		const consentUrl = this.createConsentUrl(oAuthQuery, client.clientName);
 		return consentUrl;
 	}
 

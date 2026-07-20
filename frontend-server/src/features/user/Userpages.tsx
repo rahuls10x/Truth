@@ -50,7 +50,6 @@ export function ProfilePage({ icon: Icon, text }: { icon: LucideIcon; text: stri
 		async function fetchProfileDetails() {
 			const response = await profile();
 			if (response) {
-				console.log(response);
 				setProfileData(response);
 				reset(response);
 			}

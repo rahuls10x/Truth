@@ -10,7 +10,7 @@ The Following rules must be followed at all times
 - All versions should be categorized by the following metrics - `### Added | Removed | Changed | Fixed | Deprecated | Security`
 - Rules might be updated so always refer to existing rules and adhere to them.( Worried about myself not following )
 
-## dev[1.0.1] - [??]
+## dev[1.0.1] - [20-07-26]
 
 ### Added
 - Added initial release documentation with proper structure ( `CHANGELOG.md` and `RELEASE_NOTES.md`)
