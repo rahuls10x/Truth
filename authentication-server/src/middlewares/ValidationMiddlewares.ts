@@ -238,19 +238,19 @@ export default class ValidationMiddlewares {
 	 * - pass the control to the next middleware
 	 * 
 	 * @remarks
-	 * checks for client_id, redirect_uri, response_type, state, scopes, challenge_method, code_challenge
+	 * checks for client_id, redirect_uri, response_type, state, scope, challenge_method, code_challenge
 	 */
 	authorize: RequestHandler = (req, res, next) => {
 		try {
-			this.validateRequiredQuery(req, "client_id", "redirect_uri", "response_type", "state", "scopes", "challenge_method", "code_challenge");
-			const { client_id, redirect_uri, response_type, state, challenge_method, scopes, code_challenge } = req.query;
+			this.validateRequiredQuery(req, "client_id", "redirect_uri", "response_type", "state", "scope", "challenge_method", "code_challenge");
+			const { client_id, redirect_uri, response_type, state, challenge_method, scope, code_challenge } = req.query;
 
 			this.validateData("client_id", client_id);
 			this.validateData("redirect_uri", redirect_uri);
 			this.validateData("response_type", response_type);
 			this.validateData("state", state);-
 			this.validateData("challenge_method", challenge_method);
-			this.validateData("scopes", (scopes as string).trim()?.split(" "));
+			this.validateData("scope", (scope as string).trim()?.split(" "));
 			this.validateData("code_challenge", code_challenge);
 
 			req.authorizationRequest = {
@@ -259,7 +259,7 @@ export default class ValidationMiddlewares {
 				responseType: response_type as "code",
 				state: state as string,
 				challengeMethod: challenge_method as "S256",
-				scope: (scopes as string).trim()?.split(" "),
+				scope: (scope as string).trim()?.split(" "),
 				codeChallenge: code_challenge as string
 			}
 

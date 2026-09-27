@@ -71,7 +71,7 @@ export default class OAuthService {
 			response_type: oAuthQuery.responseType,
 			state: oAuthQuery.state,
 			code: temporaryCode,
-			expiresIn: (expiry / 1000).toString(),
+			expires_in: (expiry / 1000).toString(),
 		});
 		const redirectUrl = `${oAuthQuery.redirectUri}?${urlParams.toString()}`;
 		return redirectUrl;

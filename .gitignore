@@ -18,3 +18,5 @@ resource-server/.env
 resource-server/*.local
 resource-server/.env.local
 resource-server/.env.*.local
+
+/docs
