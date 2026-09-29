@@ -411,17 +411,19 @@ export function OrganizationSignupPage() {
 
 export function ConsentPage() {
 	const [searchParams] = useSearchParams();
+	const error = searchParams.get("error");
+	const errorDescription = searchParams.get("error_description");
 	const clientId = searchParams.get("client_id");
 	const redirectUri = searchParams.get("redirect_uri");
 	const responseType = searchParams.get("response_type");
 	const challengeMethod = searchParams.get("challenge_method");
-	const code_challenge = searchParams.get("challenge_method");
+	const code_challenge = searchParams.get("code_challenge");
 	const scopes = (searchParams.get("scope") ?? "").trim().split(/\s+/).filter(Boolean);
 	const clientName = searchParams.get("client_name");
 	const [isLoading, setIsLoading] = useState<"granted" | "denied" | false>(false);
 	const { entity, consent } = useAuth();
 	const isValidRequest = Boolean(
-		clientId && clientName && redirectUri && responseType && challengeMethod === "S256" && code_challenge && scopes.length > 0,
+		!error && clientId && clientName && redirectUri && responseType && challengeMethod === "S256" && code_challenge && scopes.length > 0,
 	);
 
 	function capitalizeInitials(text: string): string {
@@ -443,18 +445,41 @@ export function ConsentPage() {
 
 	return (
 		<AuthInterface
-			title={`Authorize ${clientName ? capitalizeInitials(clientName ?? "") : "nothing"}`}
-			description={isValidRequest ? "Only authorize clients you trust" : "Authorization request is incomplete or invalid"}
+			title={error ? "Authorization Failed" : `Authorize ${clientName ? capitalizeInitials(clientName ?? "") : "nothing"}`}
+			description={error ? (errorDescription ?? "An error occurred during authorization") : (isValidRequest ? "Only authorize clients you trust" : "Authorization request is incomplete or invalid")}
 			footer=""
 		>
-			<Card className="my-2">
-				<CardHeader>
-					<CardTitle>{entity?.name}</CardTitle>
-					<CardDescription>{entity?.email}</CardDescription>
-				</CardHeader>
-			</Card>
+			{entity && !error && (
+				<Card className="my-2">
+					<CardHeader>
+						<CardTitle>{entity?.name}</CardTitle>
+						<CardDescription>{entity?.email}</CardDescription>
+					</CardHeader>
+				</Card>
+			)}
 
-			{!isValidRequest && (
+			{error && (
+				<Empty className="w-full">
+					<EmptyHeader>
+						<EmptyMedia className="size-10">
+							<CircleXIcon className="size-6" />
+						</EmptyMedia>
+						<EmptyTitle className="font-heading text-lg">
+							Authorization Error
+						</EmptyTitle>
+						<EmptyDescription className="font-subheading text-sm text-destructive">
+							{errorDescription || error}
+						</EmptyDescription>
+					</EmptyHeader>
+					<EmptyContent>
+						<Button asChild>
+							<Link to={APP_ROUTES.root}>Return Home</Link>
+						</Button>
+					</EmptyContent>
+				</Empty>
+			)}
+
+			{!isValidRequest && !error && (
 				<Card className="w-full max-w-md text-center bg-transparent">
 					<CardHeader>
 						<CardDescription className="font-subheading text-base text-muted-foreground">
@@ -469,7 +494,7 @@ export function ConsentPage() {
 				</Card>
 			)}
 
-			{isValidRequest && (
+			{isValidRequest && !error && (
 				<Card className="bg-transparent ring-0">
 					<CardContent>
 						<h1 className="text-sm lg:text-base text-nowrap truncate">Third-party is requesting access to: </h1>

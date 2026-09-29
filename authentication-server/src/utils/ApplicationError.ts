@@ -1,4 +1,5 @@
 import type { Response } from "express";
+import AuthorizationError from "./AuthorizationError.js";
 
 /**
  * Custom Error Class with status code and message
@@ -19,12 +20,20 @@ export default class ApplicationError extends Error {
  * Error handling middleware
  * 
  * Inorder Flow:
+ * - checks if AuthorizationError then redirect to consent URL with error query parameters
  * - checks if ApplicationError then respond with status code and error message
  * - checks if Language Error then respond with status code 500 and error message
  * - Fallback case if error is none of the above respond with status code 500 and error message
  */
 export function errorHandling(err: unknown, res: Response) {
-    // console.log(err);
+    if (err instanceof AuthorizationError) {
+        const errorParams = new URLSearchParams({
+            error: err.error,
+            error_description: err.message,
+        });
+        return res.status(302).redirect(`${process.env.ORIGIN_URL}/consent?${errorParams.toString()}`);
+    }
+
     if (err instanceof ApplicationError) {
         return res.status(err.statusCode).json({
             success: false,

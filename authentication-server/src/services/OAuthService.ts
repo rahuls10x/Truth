@@ -2,6 +2,7 @@ import type { AuthenticationCode, Token, UserConsent } from "../types/dbSchema.j
 import type ClientRepository from "../repositories/ClientRepository.js";
 import type { AuthorizationQuery, ConsentQuery, RefreshTokenParams, TokenizationBody, TokenPayload } from "../types/index.js";
 import { strictCheck } from "../utils/ApplicationError.js";
+import { authorizeCheck } from "../utils/AuthorizationError.js";
 import CryptoService from "./CryptoService.js";
 import type TokenRepository from "../repositories/TokenRepository.js";
 import type ConsentRepository from "../repositories/ConsentRepository.js";
@@ -61,9 +62,9 @@ export default class OAuthService {
 			scopes: oAuthQuery.scope,
 		};
 
-		strictCheck(
+		authorizeCheck(
 			await this.tokenRepository.cacheAuthorizationCode(temporaryCode, authenticationCode, expiry),
-			400,
+			"server_error",
 			"Failed to create authorization code",
 		);
 
@@ -158,10 +159,10 @@ export default class OAuthService {
 	 * - create consent page url along with client name and returns it (Waiver does not exist)
 	 */
 	async authorize(oAuthQuery: AuthorizationQuery): Promise<string> {
-		const client = strictCheck(await this.clientRepository.findByClientId(oAuthQuery.clientId), 400, "Client not found");
+		const client = authorizeCheck(await this.clientRepository.findByClientId(oAuthQuery.clientId), "invalid_client", "Client not found");
 
-		strictCheck(client.redirectUri === oAuthQuery.redirectUri, 400, "Invalid redirect uri");
-		strictCheck(client.responseType === oAuthQuery.responseType, 400, "Invalid response type");
+		authorizeCheck(client.redirectUri === oAuthQuery.redirectUri, "invalid_request", "Invalid redirect uri");
+		authorizeCheck(client.responseType === oAuthQuery.responseType, "unsupported_response_type", "Invalid response type");
 
 		const waiver = await this.consentRepository.getWaiverByUserIdAndClientId(oAuthQuery.userId, oAuthQuery.clientId);
 
