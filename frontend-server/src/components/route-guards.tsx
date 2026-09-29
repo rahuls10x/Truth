@@ -2,7 +2,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { getLoginRoute, getPortalRoute } from "@/config/routes";
 import { useAuth } from "@/contexts/AuthContext";
 import type { EntityType } from "@/types";
-import { Navigate, Outlet, useLocation } from "react-router-dom";
+import { Navigate, Outlet, useLocation, useSearchParams } from "react-router-dom";
 
 export function RouteLoadingScreen() {
 	return (
@@ -16,8 +16,23 @@ export function RouteLoadingScreen() {
 }
 
 export function PublicOnlyRoute() {
-	const { entityType , entity } = useAuth();
-	if ( entity && entityType) return <Navigate to={getPortalRoute(entityType)} replace />;
+	const { entityType, entity } = useAuth();
+	const [searchParams] = useSearchParams();
+
+	if (entity && entityType) {
+		const next = searchParams.get("next");
+		if (next) {
+			const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:4000";
+			if (next.startsWith(apiUrl)) {
+				window.location.assign(next);
+				return <RouteLoadingScreen />;
+			}
+			if (next.startsWith("/") && !next.startsWith("//")) {
+				return <Navigate to={next} replace />;
+			}
+		}
+		return <Navigate to={getPortalRoute(entityType)} replace />;
+	}
 
 	return <Outlet />;
 }

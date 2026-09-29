@@ -116,7 +116,7 @@ async function boot (){
 
         //------------- OAuth ---------------
         app.post("/consent", validationMiddleware.consent, authMiddleware.checkUserAuthToken, oAuthController.consent);
-        app.get("/authorize", validationMiddleware.authorize, authMiddleware.checkUserAuthToken, oAuthController.authorize );
+        app.get("/authorize", validationMiddleware.authorize, authMiddleware.checkOAuthUserAuthToken, oAuthController.authorize );
         app.post("/token", validationMiddleware.tokenize, oAuthController.tokenize);
         app.get("/refresh", validationMiddleware.refreshToken, oAuthController.refreshToken);
 
