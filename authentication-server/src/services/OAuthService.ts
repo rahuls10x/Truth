@@ -128,12 +128,25 @@ export default class OAuthService {
 	 * 
 	 * Inorder Flow:
 	 * - Checks if client exists
+	 * - Checks if already exists then update the previous consent
 	 * - Creates user consent object
 	 * - Creates user consent using user consent object
 	 */
 	async consent(consentQuery:ConsentQuery): Promise<void> {
 		
 		strictCheck(await this.clientRepository.findByClientId(consentQuery.clientId), 400, "Client not found");
+
+		if(await this.consentRepository.getWaiverByUserIdAndClientId(consentQuery.userId, consentQuery.clientId)){
+			const updatedConsentPayload = {
+				consent: consentQuery.consent,
+				scopes: consentQuery.scopes,
+				isRevoked: false,
+				updatedAt: new Date()
+			}
+
+			strictCheck(await this.consentRepository.updateWaiverByUserIdAndClientId(consentQuery.userId, consentQuery.clientId, updatedConsentPayload), 500, "Failed to update user consent");
+			return;
+		}
 
 		const consentPayload:UserConsent = {
 			userId: consentQuery.userId,

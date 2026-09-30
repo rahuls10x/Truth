@@ -26,6 +26,24 @@ export default class ConsentRepository{
     }
 
     /**
+     * Update waiver by userId and clientId
+     * 
+     * Inorder Flow:
+     * - Updates the waiver and returns the status
+     */
+    async updateWaiverByUserIdAndClientId(userId: string, clientId: string, updateData:Omit<UserConsent, "userId" | "clientId" | "createdAt">): Promise< boolean >{
+        const status = await this.db.collection<UserConsent>("userConsents").updateOne({
+            userId,
+            clientId
+        }, 
+        {
+            $set: updateData
+        });
+        
+        return status.modifiedCount === 1;
+    }
+
+    /**
      *  Creates a new user consent by userConsent object
      * 
      * Inorder Flow:

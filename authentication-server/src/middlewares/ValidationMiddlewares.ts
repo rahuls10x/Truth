@@ -250,7 +250,7 @@ export default class ValidationMiddlewares {
 			this.validateData("response_type", response_type);
 			this.validateData("state", state);-
 			this.validateData("challenge_method", challenge_method);
-			this.validateData("scope", (scope as string).trim()?.split(" "));
+			this.validateData("scopes", (scope as string).trim()?.split(" "));
 			this.validateData("code_challenge", code_challenge);
 
 			req.authorizationRequest = {
