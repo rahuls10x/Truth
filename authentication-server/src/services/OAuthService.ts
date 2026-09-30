@@ -196,7 +196,6 @@ export default class OAuthService {
 	 * - matches the code verifier
 	 * - retrieves and returns the token payload DTO
 	 * 
-     * 
      * @refinement
      * Implement a JWS verification later instead of opaque token
      */

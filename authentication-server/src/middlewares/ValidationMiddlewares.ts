@@ -284,7 +284,7 @@ export default class ValidationMiddlewares {
 	tokenize: RequestHandler = (req, res, next) => {
 		try {
 			this.validateRequiredFields(req, "client_id", "client_secret", "code", "code_verifier");
-			const { client_id, code, code_verifier, client_secret } = req.body;
+			const { client_id, client_secret, code, code_verifier } = req.body;
 
 			this.validateData("client_id", client_id);
 			this.validateData("authCode", code);
