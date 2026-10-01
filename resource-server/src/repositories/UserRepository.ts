@@ -16,9 +16,6 @@ export default class UserRepository{
      * 
      * @remarks
      * - Only verified user is fetched
-     * 
-     * @param {string} userId 
-     * @returns {User | null}
      */
     async getUserById(userId: string): Promise<User | null> {
         return await this.db.collection<User>("users").findOne({

@@ -13,12 +13,9 @@ export default class UserController{
      * Handles resource request
      * 
      * Inorder Flow:
-     * - Get user id and scopes from request ( set by TokenAuthMiddleware )
-     * - Get user resource {UserPayload} for user service
+     * - Get user id and scopes from request
+     * - Get user resource payload
      * - Return user resource response
-     * 
-     * @param {Request} req 
-     * @param {Response} res 
      */
     resource: RequestHandler = async (req: Request, res :Response) => {
         try{
@@ -26,7 +23,11 @@ export default class UserController{
 
             const result = await this.userService.getResource(params);
 
-            res.status(200).json(result);
+            res.status(200).json({
+                success: true,
+                message: "User resource has been fetched Successfully",
+                data: result
+            });
 
         }catch(error){errorHandling(error,res);};
     }

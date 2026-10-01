@@ -22,7 +22,6 @@ export interface UserPayload{
     name?:string,
     age?:number,
     email?:string,
-    password?:string,
     gender?:string,
     avatar?:string
 }

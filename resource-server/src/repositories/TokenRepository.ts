@@ -18,10 +18,9 @@ export default class TokenRepository {
 	 * - Retrieve from cache and if found return token
 	 * - Retrieve from DB and return
      * 
-     * @remarks When it is returned from database it is also checked if its active
-	 *
-	 * @param {string} token - access token
-	 * @returns {Token | null}
+     * @remarks 
+	 * When it is returned from database it is also checked if its active
+	 * Also token in cache is saved with ttl expiry so no need to check
 	 */
 	async findActiveAccessToken(token: string): Promise<Token | null> {
 		const cachedToken = await this.cache.get(token);

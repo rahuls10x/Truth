@@ -239,7 +239,7 @@ export default class OAuthService {
 
         const tokenPayload = await this.createTokenPayload(clientId, existingRefreshToken.userId, existingRefreshToken.scopes);
 
-        strictCheck(await this.tokenRepository.deactivateToken(refreshToken), 400, "Failed to delete refresh token");
+        strictCheck(await this.tokenRepository.deactivateRefreshToken(refreshToken), 400, "Failed to delete refresh token");
 
         return tokenPayload;
     }

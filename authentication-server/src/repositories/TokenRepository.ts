@@ -93,7 +93,7 @@ export default class TokenRepository{
      * @remarks
      * checks isActive is true before updating
      */
-    async deactivateToken(key:string):Promise<boolean>{
+    async deactivateRefreshToken(key:string):Promise<boolean>{
         const result = await this.db.collection<Token>("refreshTokens").updateOne({
             tokenString:key,
             isActive:true

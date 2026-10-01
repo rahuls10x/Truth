@@ -16,9 +16,6 @@ export default class UserService {
      * - Get user details by id and check if user exists
      * - Construct user payload
      * - Return constructed user payload
-     *  
-     * @param {{id: string, scopes: string[]}} params 
-     * @returns {UserPayload} User Payload
      */
     async getResource(params:{id: string, scopes: string[]}): Promise<UserPayload> {
 
