@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "tsx watch server.ts",
     "build": "tsc",
-    "start": "node server.js",
+    "start": "node dist/server.js",
     "test": "vitest"
   },
   "keywords": [],

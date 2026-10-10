@@ -7,7 +7,7 @@
     "dev": "tsx watch server.ts",
     "lint": "eslint . --ext .ts",
     "build": "tsc",
-    "start": "node server.js",
+    "start": "node dist/server.js",
     "test": "vitest"
   },
   "keywords": [],
