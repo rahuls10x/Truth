@@ -118,7 +118,8 @@ export default class OAuthService {
             token_type: "Bearer",
             expires_in: 60 * 60 * 1000,
             refresh_token: refreshToken,
-            scopes: scopes
+            scopes: scopes,
+			user_id: userId
         }
         return tokenPayloadDTO;
     }

@@ -1,11 +1,12 @@
+name: Truth
 services:
   frontend-server:
     build:
       context: ./frontend-server
       args:
-        VITE_API_URL: http://localhost:4000
+        VITE_API_URL: ${VITE_API_URL:-http://localhost:4000}
     ports:
-      - "5173:80"
+      - "${FRONTEND_BIND_IP:-127.0.0.1}:${FRONTEND_PORT:-5173}:80"
     depends_on:
       - authentication-server
       - resource-server
@@ -13,9 +14,9 @@ services:
   authentication-server:
     build: ./authentication-server
     ports:
-      - "4000:4000"
+      - "${AUTH_BIND_IP:-127.0.0.1}:${AUTH_PORT:-4000}:4000"
     environment:
-      ORIGIN_URL: http://localhost:5173
+      ORIGIN_URL: ${ORIGIN_URL:-http://localhost:5173}
       MONGO_DB: mongodb://mongo:27017
       REDIS_DB: redis://redis:6379
       PORT: 4000
@@ -26,7 +27,7 @@ services:
   resource-server:
     build: ./resource-server
     ports:
-      - "5000:5000"
+      - "${RESOURCE_BIND_IP:-127.0.0.1}:${RESOURCE_PORT:-5000}:5000"
     environment:
       MONGO_DB: mongodb://mongo:27017
       REDIS_DB: redis://redis:6379
@@ -38,14 +39,14 @@ services:
   mongo:
     image: mongo:8
     ports:
-      - "27017:27017"
+      - "127.0.0.1:27017:27017"
     volumes:
       - mongo-data:/data/db
 
   redis:
     image: redis:8
     ports:
-      - "6379:6379"
+      - "127.0.0.1:6379:6379"
 
 volumes:
   mongo-data:

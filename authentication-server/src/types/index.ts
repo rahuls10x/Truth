@@ -112,6 +112,7 @@ export interface TokenPayload {
 	expires_in: number;
 	refresh_token: string;
 	scopes: string[];
+	user_id: string;
 }
 
 export interface RefreshTokenParams {
