@@ -23,26 +23,6 @@ declare module "express-serve-static-core" {
 			email: string;
 		};
 		sessionId?: string;
-		authorizationRequest?: {
-			clientId: string;
-			redirectUri: string;
-			responseType: "code";
-			state: string;
-			challengeMethod: "S256";
-			scope: string[];
-			codeChallenge: string;
-		};
-		tokenizationRequest?: {
-			clientId: string;
-			clientSecret: string;
-			code: string;
-			codeVerifier: string;
-		};
-		refreshTokenRequest?: {
-			refreshToken: string;
-			clientId: string;
-			clientSecret: string;
-		};
 	}
 }
 

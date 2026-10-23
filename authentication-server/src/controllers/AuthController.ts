@@ -3,6 +3,7 @@ import { errorHandling, strictCheck } from "../utils/ApplicationError.js";
 import type AuthService from "../services/AuthService.js";
 import DeviceDetector from "device-detector-js";
 import type { Hardware } from "../types/dbSchema.js";
+import { LoginInput, ResetPasswordInput, VerifyEmailInput } from "../utils/ValidationSchema.js";
 
 export default class AuthController {
     private authService: AuthService;
@@ -39,15 +40,16 @@ export default class AuthController {
      * Handles verify email Request
      * 
      * Inorder Flow:
-     * - retrive magicToken from request params
+     * - validated and retrieve magicToken from request params
      * - verify email
      * - structure and send response
      */
     verifyEmail: RequestHandler = async (req, res) => {
         try {
-            const magicToken = strictCheck(req.params['magicToken'], 500, "Internal Server Error");
+            const status = VerifyEmailInput.safeParse(req.params);
+            const validateData = strictCheck(status.data, 400, status.error?.issues[0]?.message || "Invalid request data");
 
-            const data = await this.authService.verifyEmail(magicToken as string);
+            const data = await this.authService.verifyEmail(validateData.magicToken);
 
             res.status(200).json({
                 success: true,
@@ -61,16 +63,18 @@ export default class AuthController {
      * Handles reset password Request
      * 
      * Inorder Flow:
-     * - retrive magicToken from request params
+     * - validate and retrive magicToken, password from request params, request body respectively
      * - verify email
      * - structure and send response
      */
     resetPassword: RequestHandler = async (req, res) => {
         try {
-            const magicToken = strictCheck(req.params['magicToken'], 500, "Internal Server Error");
-            const { password } = req.body;
+            const { magicToken } = req.params;
+			const { password } = req.body;
+            const status = ResetPasswordInput.safeParse({ password, magicToken });
+            const validatedData = strictCheck(status.data, 400, status.error?.issues[0]?.message || "Invalid request data");
 
-            const data = await this.authService.resetPassword(magicToken as string, password);
+            const data = await this.authService.resetPassword(validatedData.magicToken, validatedData.password);
 
             res.status(200).json({
                 success: true,
@@ -107,13 +111,14 @@ export default class AuthController {
      * Handles revoke session Request
      * 
      * Inorder Flow: 
-     * - Retrieve maskedId from request body
+     * - Retrieve and validate maskedId from request body
      * - Revoke session by maskedId
      * - structure and send response
      */
     revokeSession: RequestHandler = async (req, res) => {
         try {
             const { _id } = req.body;
+            strictCheck(_id, 400, "Invalid request data");
 
             await this.authService.revokeSession(_id);
 
@@ -150,19 +155,20 @@ export default class AuthController {
      * Handles user login Request
      * 
      * Inorder Flow:
-     * - retrive email, password, ip, device information from request body, ip and headers
+     * - validate data and retrieve ip, device information from request body, headers
      * - retrive login Payload from login details
      * - set cookie with sessionId 
      * - structure and send response
      */
     userLogin: RequestHandler = async (req, res) => {
         try {
-            const { email, password }: {email:string, password:string } = req.body;
+            const status = LoginInput.safeParse(req.body);
+            const validatedData = strictCheck(status.data, 400, status.error?.issues[0]?.message || "Invalid request data");
             const ip = req.ip as string;
             const userAgent = req.headers["user-agent"] as string;
             const hardware = this.deviceDetector.parse(userAgent) as Hardware;
 
-            const loginPayload = strictCheck(await this.authService.userLogin({email, password, ip, hardware}), 401, "Invalid Credentials");
+            const loginPayload = strictCheck(await this.authService.userLogin({...validatedData, ip, hardware}), 401, "Invalid Credentials");
 
             res.cookie("authToken", loginPayload.sessionId, {
                 httpOnly: true,
@@ -186,19 +192,20 @@ export default class AuthController {
      * Handles organization login Request
      * 
      * Inorder Flow:
-     * - retrive email, password, ip, device information from request body, ip and headers
+     * - validate data and retrieve ip, device information from request body, headers
      * - retrive login Payload from login details
      * - set cookie with sessionId 
      * - structure and send response
-     */
+     */ 
     organizationLogin: RequestHandler = async (req, res) => {
         try {
-            const { email, password }: {email:string, password:string } = req.body;
+            const status = LoginInput.safeParse(req.body);
+            const validatedData = strictCheck(status.data, 400, status.error?.issues[0]?.message || "Invalid request data");
             const ip = req.ip as string;
             const userAgent = req.headers["user-agent"] as string;
             const hardware = this.deviceDetector.parse(userAgent) as Hardware;
 
-            const loginPayload = strictCheck(await this.authService.organizationLogin({email, password, ip, hardware}), 401, "Invalid Credentials");
+            const loginPayload = strictCheck(await this.authService.organizationLogin({...validatedData, ip, hardware}), 401, "Invalid Credentials");
 
             res.cookie("authToken", loginPayload.sessionId, {
                 httpOnly: true,
