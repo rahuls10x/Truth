@@ -10,7 +10,6 @@ import AuthService from "./src/services/AuthService.js";
 import TokenRepository from "./src/repositories/TokenRepository.js";
 import ClientRepository from "./src/repositories/ClientRepository.js";
 import { createTimeToLiveIndex, createUniqueIndex } from "./src/utils/ConfigFunctions.js";
-import ValidationMiddlewares from "./src/middlewares/ValidationMiddlewares.js";
 import UserController from "./src/controllers/UserController.js";
 import UserService from "./src/services/UserService.js";
 import UserRepository from "./src/repositories/UserRepository.js";
@@ -84,41 +83,40 @@ async function boot (){
         const oAuthController = new OAuthController(oAuthService);
 
         const authMiddleware = new TokenAuthMiddleware(sessionRepository);
-        const validationMiddleware = new ValidationMiddlewares();
 
         // ------------- Routes ---------------
         app.get("/user/profile", authMiddleware.checkUserAuthToken, userController.getProfile);
-        app.put("/user/profile", authMiddleware.checkUserAuthToken, validationMiddleware.validateUpdateProfile, userController.updateProfile);
+        app.put("/user/profile", authMiddleware.checkUserAuthToken, userController.updateProfile);
 
         app.get("/org/clients", authMiddleware.checkOrganizationAuthToken, orgController.getClients);
-        app.post("/org/clients", authMiddleware.checkOrganizationAuthToken, validationMiddleware.validateCreateClient, orgController.createClient);
+        app.post("/org/clients", authMiddleware.checkOrganizationAuthToken, orgController.createClient);
 
-        app.post("/user/signup", validationMiddleware.userSignup, userController.signupRequest);
-        app.post("/org/signup", validationMiddleware.orgSignup, orgController.signupRequest);
+        app.post("/user/signup", userController.signupRequest);
+        app.post("/org/signup", orgController.signupRequest);
 
-        app.post("/user/login", validationMiddleware.login, authController.userLogin);
-        app.post("/org/login", validationMiddleware.login, authController.organizationLogin);
+        app.post("/user/login", authController.userLogin);
+        app.post("/org/login", authController.organizationLogin);
 
-        app.post("/user/forgotPassword", validationMiddleware.forgotPassword, userController.forgotPassword);
-        app.post("/org/forgotPassword", validationMiddleware.forgotPassword, orgController.forgotPassword);
+        app.post("/user/forgotPassword", userController.forgotPassword);
+        app.post("/org/forgotPassword", orgController.forgotPassword);
 
         app.get("/sessions", authMiddleware.checkAuthToken, authController.getSessions);
-        app.delete("/revokeSession", authMiddleware.checkAuthToken, validationMiddleware.validateRevokeSession, authController.revokeSession);
+        app.delete("/revokeSession", authMiddleware.checkAuthToken, authController.revokeSession);
         app.delete("/revokeAllSessions", authMiddleware.checkAuthToken, authController.revokeAllSessions);
 
-        app.put("/verifyEmail/:magicToken", validationMiddleware.verifyEmail, authController.verifyEmail);
+        app.put("/verifyEmail/:magicToken", authController.verifyEmail);
 
-        app.patch("/resetPassword/:magicToken", validationMiddleware.resetPassword, authController.resetPassword);
+        app.patch("/resetPassword/:magicToken", authController.resetPassword);
 
         app.get("/logout", authMiddleware.checkAuthToken, authController.logout);
 
         app.get("/whoAmI", authMiddleware.checkAuthToken, authController.whoAmI);
 
         //------------- OAuth ---------------
-        app.post("/consent", validationMiddleware.consent, authMiddleware.checkUserAuthToken, oAuthController.consent);
-        app.get("/authorize", validationMiddleware.authorize, authMiddleware.checkOAuthUserAuthToken, oAuthController.authorize );
-        app.post("/tokenize", validationMiddleware.tokenize, oAuthController.tokenize);
-        app.post("/refresh", validationMiddleware.refreshToken, oAuthController.refreshToken);
+        app.post("/consent", authMiddleware.checkUserAuthToken, oAuthController.consent);
+        app.get("/authorize", authMiddleware.checkOAuthUserAuthToken, oAuthController.authorize );
+        app.post("/tokenize", oAuthController.tokenize);
+        app.post("/refresh", oAuthController.refreshToken);
 
         app.get("/", (_req, res) => {
             res.send("Server is Running!!");
