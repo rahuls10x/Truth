@@ -1,6 +1,7 @@
 // ------------- Imports ---------------
 import express from "express";
 import cors from "cors";
+import http from 'http';
 import cookieParser from "cookie-parser";
 import { config } from "dotenv";
 import { MongoClient } from "mongodb";
@@ -24,12 +25,28 @@ import TokenAuthMiddleware from "./src/middlewares/TokenAuthMiddleware.js";
 import LinkRepository from "./src/repositories/LinkRepository.js";
 import MailService from "./src/services/MailService.js";
 import LinkService from "./src/services/LinkSevice.js";
+import { Server } from "socket.io";
+import type { AppSocket } from "./src/types/socketTypes.js";
+import { JoinSocketRooms, SocketRoutes } from "./src/routes/socket.js";
 
 // ------------- Configuration ---------------
+config({ path: ".env" });
+
+const originUrl = process.env.ORIGIN_URL || "http://localhost:5173";
+const port = process.env.PORT || 4000
+
 const app = express();
+// Wrap Express in HTTP server to share the TCP listener and port with Socket.io
+const httpServer = http.createServer(app);
+const socketIo = new Server(httpServer, {
+	cors: {
+		origin: originUrl,
+		credentials: true,
+	},
+});
+
 app.use(express.json());
 app.use(cookieParser());
-config({ path: ".env" });
 app.use(cors({
     origin: process.env.ORIGIN_URL,
     credentials: true
@@ -84,6 +101,16 @@ async function boot (){
 
         const authMiddleware = new TokenAuthMiddleware(sessionRepository);
 
+        // ------------- WebsocketEvents --------------
+		socketIo.use((socket, next) => authMiddleware.checkSocketToken(socket, next));
+
+		socketIo.on("connection", (socket: AppSocket) => {
+			console.log(`[WebSocket] Client connected: ${socket.id} (Session: ${socket.data.sessionId}) (Entity: ${socket.data.entityId})`);
+
+			JoinSocketRooms(socket);
+			SocketRoutes(socket);
+		});
+
         // ------------- Routes ---------------
         app.get("/user/profile", authMiddleware.checkUserAuthToken, userController.getProfile);
         app.put("/user/profile", authMiddleware.checkUserAuthToken, userController.updateProfile);
@@ -123,23 +150,24 @@ async function boot (){
         });
 
         // ------------- Server Start ---------------
-        app.listen(process.env.PORT, () => {
-            console.log("Server started on port", process.env.PORT);
-        });
+		httpServer.listen(port, () => {
+			console.log(`Backend server listening on port ${port}`);
+		});
 
-        // ------------- Shutdown ---------------
-        process.on("SIGINT", async () => {
-            await mongoConnection.close();
-            await redisConnection.disconnect();
-            console.log("Database disconnected successfully");
-            process.exit(0);
-        });
-        process.on("SIGTERM", async () => {
-            await mongoConnection.close();
-            await redisConnection.disconnect();
-            console.log("Database disconnected successfully");
-            process.exit(0);
-        });
+		// ------------- Shutdown ---------------
+		process.on("SIGINT", () => {
+			httpServer.close(() => {
+				console.log("Server stopped gracefully");
+				process.exit(0);
+			});
+		});
+
+		process.on("SIGTERM", () => {
+			httpServer.close(() => {
+				console.log("Server stopped gracefully");
+				process.exit(0);
+			});
+		});
 
     } catch (error) {
         console.error(error);

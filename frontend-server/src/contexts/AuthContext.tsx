@@ -2,7 +2,7 @@ import { API_ROUTES } from "@/config/routes";
 import useApiService from "@/hooks/useApiService";
 import type { AuthenticatedEntity, EntityType } from "@/types";
 import { ForgotPasswordSchema, ResetPasswordSchema, type LoginSchema, type OrganizationSignupSchema, type SignupSchema } from "@/types/validation";
-import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 import { useNotification } from "./NotificationContext";
 import { useNavigate } from "react-router-dom";
 
@@ -14,6 +14,7 @@ interface ConsentRequest {
 
 interface AuthContextType {
 	isLoading: boolean;
+	isAuthenticated: boolean;
 	entity: AuthenticatedEntity | null;
 	entityType: EntityType | null;
 	userSignup: (values: SignupSchema) => Promise<void>;
@@ -25,17 +26,27 @@ interface AuthContextType {
 	verifyEmail:(magicToken:string) => Promise<{type: EntityType} | undefined>;
 	forgotPassword: (entityType: EntityType, values: ForgotPasswordSchema)=> Promise<boolean | undefined>;
 	resetPassword: (magicToken:string, values: ResetPasswordSchema) => Promise<{type: EntityType} | undefined>;
+	registerBeforeLogout: (callback: () => void | Promise<void>) => () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
+	const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
 	const [entity, setEntity] = useState<AuthenticatedEntity | null>(null);
 	const [entityType, setEntityType] = useState<EntityType | null>(null);
 	const [isLoading, setIsLoading] = useState<boolean>(true);
 	const { getRequest, postRequest, putRequest, patchRequest } = useApiService(import.meta.env.VITE_API_URL);
 	const { error, success } = useNotification();
 	const navigate = useNavigate();
+	const beforeLogoutCallbacks = useRef<Set<() => void | Promise<void>>>(new Set());
+
+	const registerBeforeLogout = useCallback((callback: () => void | Promise<void>) => {
+		beforeLogoutCallbacks.current.add(callback);
+		return () => {
+			beforeLogoutCallbacks.current.delete(callback);
+		};
+	}, []);
 
 	async function userSignup(values: SignupSchema): Promise<void> {
 		const response = await postRequest(API_ROUTES.user.signup, {
@@ -86,6 +97,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
 		if (response.success && response.message && response.data) {
 			success("Login successful", response.message);
+			setIsAuthenticated(true);
 			setEntityType(entityKind);
 			setEntity(response.data);
 		}
@@ -99,20 +111,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
 	const organizationLogin = (values: LoginSchema) => login("organization", values);
 
-	async function logout(): Promise<void> {
-		const response = await getRequest(API_ROUTES.logout);
-		if (!response) return;
+	const logout = useCallback(async () => {
+		try {
+			// Execute all registered beforeLogout callbacks (e.g. disconnect websocket)
+			for (const callback of beforeLogoutCallbacks.current) {
+				try {
+					await callback();
+				} catch (cbError) {
+					console.error("[Auth] Error executing beforeLogout hook:", cbError);
+				}
+			}
 
-		if (!response.success && response.error) {
-			error("Logout failed", response.error);
-			return;
+			// Send logout request to backend server
+			const response = await getRequest(API_ROUTES.logout);
+			if (!response) return;
+
+			success("Logged out", response.message ?? "Your session has ended.");
+
+		} catch (error) {
+			console.error("[Auth] Logout request failed:", error);
+		} finally {
+			setIsAuthenticated(false);
+			setEntity(null);
+			setEntityType(null);
+			navigate("/");
 		}
-
-		setEntity(null);
-		setEntityType(null);
-		success("Logged out", response.message ?? "Your session has ended.");
-		navigate("/");
-	}
+	}, [API_ROUTES.logout]);
 
 	async function consent(values: ConsentRequest, authorizationQuery: URLSearchParams): Promise<void> {
 		const response = await postRequest(API_ROUTES.consent, values);
@@ -195,6 +219,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 			if (!response) return;
 
 			if (response.success && response.data) {
+				setIsAuthenticated(true);
 				setEntity({ name: response.data.name, email: response.data.email });
 				setEntityType(response.data.type);
 				success("Login successful", response.message ?? "Your session has started.");
@@ -204,6 +229,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 			if (!response.success && response.error) {
 				setEntity(null);
 				setEntityType(null);
+				setIsAuthenticated(false);
 			}
 		});
 	}, []);
@@ -212,6 +238,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 		<AuthContext.Provider
 			value={{
 				isLoading,
+				isAuthenticated,
 				entity,
 				entityType,
 				userLogin,
@@ -223,6 +250,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 				verifyEmail, 
 				forgotPassword,
 				resetPassword,
+				registerBeforeLogout
 			}}
 		>
 			{children}

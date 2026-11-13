@@ -8,6 +8,7 @@ import { ComingSoonPage, SessionPage } from "@/features/shared/SharedPages";
 import PortalLayout from "@/layouts/PortalLayout";
 import { lazy, Suspense } from "react";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
+import { SocketProvider } from "./contexts/SocketContext";
 
 const authPages = () => import("@/features/auth/AuthPages");
 
@@ -69,7 +70,9 @@ export default function App() {
 				<NotificationProvider>
 					<BrowserRouter>
 						<AuthProvider>
-							<AppRoutes />
+							<SocketProvider>
+								<AppRoutes />
+							</SocketProvider>
 						</AuthProvider>
 					</BrowserRouter>
 				</NotificationProvider>

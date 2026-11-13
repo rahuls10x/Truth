@@ -2,6 +2,8 @@ import type { RequestHandler } from "express";
 import { errorHandling, strictCheck } from "../utils/ApplicationError.js";
 import SessionRepository from "../repositories/SessionRepository.js";
 import type { Session } from "../types/dbSchema.js";
+import type { AppSocket } from "../types/socketTypes.js";
+import type { ExtendedError } from "socket.io";
 
 export default class TokenAuthMiddleware {
 	private sessionRepository: SessionRepository;
@@ -11,6 +13,54 @@ export default class TokenAuthMiddleware {
 	}
 
 	/**
+	 * WebSocket handshake authentication middleware
+	 *
+	 * Inorder Flow:
+	 * - Extract and validate cookie header from socket handshake
+	 * - Parse session token from cookies
+	 * - Validate session token using SessionService
+	 * - Attach session data to socket and proceed to next middleware
+	 *
+	 * @remarks
+	 * The injected data-
+	 * - sessionId
+	 * - entityId
+	 */
+	async checkSocketToken(socket: AppSocket, next:(err?: ExtendedError) => void): Promise<void> {
+		try {
+			const cookieHeader = socket.request.headers.cookie;
+			if (!cookieHeader) {
+				return next(new Error("Authentication error: No cookies provided"));
+			}
+
+			const cookies = cookieHeader.split(";").reduce(
+				(acc, cookie) => {
+					const [key, value] = cookie.trim().split("=");
+					if (key && value) acc[key] = decodeURIComponent(value);
+					return acc;
+				},
+				{} as Record<string, string>,
+			);
+			const sessionId = cookies["authToken"];
+			strictCheck(sessionId && sessionId.startsWith("session_"), 401, "Invalid session token");
+
+			if (!sessionId) {
+				return next(new Error("Authentication error: Session token missing"));
+			}
+
+			const session: Session = strictCheck(await this.sessionRepository.findActiveSessionById(sessionId), 401, "Session does not exist");
+
+			socket.data.sessionId = session.sessionId;
+			socket.data.entityId = session.entityId;
+			socket.data.entityType = session.type;
+			next();
+		} catch (error) {
+			next(new Error("Authentication error"));
+		}
+	}
+
+	/**
+	 * @deprecated
 	 * Middleware to validate session and inject details into request
 	 *
 	 * Inorder Flow:
