@@ -34,7 +34,7 @@ describe("OAuth /refresh (Refresh Token) - Success Flows", () => {
 			cacheAccessToken: vi.fn(),
 			createAccessToken: vi.fn(),
 			createRefreshToken: vi.fn(),
-			deactivateToken: vi.fn(),
+			deactivateRefreshToken: vi.fn(),
 		};
 		consentRepositoryMock = {
 			getWaiverByUserIdAndClientId: vi.fn(),
@@ -52,7 +52,7 @@ describe("OAuth /refresh (Refresh Token) - Success Flows", () => {
 		tokenRepositoryMock.cacheAccessToken.mockResolvedValue(true);
 		tokenRepositoryMock.createAccessToken.mockResolvedValue(true);
 		tokenRepositoryMock.createRefreshToken.mockResolvedValue(true);
-		tokenRepositoryMock.deactivateToken.mockResolvedValue(true);
+		tokenRepositoryMock.deactivateRefreshToken.mockResolvedValue(true);
 
 		const result = await oAuthService.refreshToken(sampleRefreshTokenParams);
 
@@ -68,7 +68,7 @@ describe("OAuth /refresh (Refresh Token) - Success Flows", () => {
 		expect(tokenRepositoryMock.cacheAccessToken).toHaveBeenCalled();
 		expect(tokenRepositoryMock.createAccessToken).toHaveBeenCalled();
 		expect(tokenRepositoryMock.createRefreshToken).toHaveBeenCalled();
-		expect(tokenRepositoryMock.deactivateToken).toHaveBeenCalledWith(sampleRefreshTokenParams.refreshToken);
+		expect(tokenRepositoryMock.deactivateRefreshToken).toHaveBeenCalledWith(sampleRefreshTokenParams.refreshToken);
 	});
 });
 
@@ -103,7 +103,7 @@ describe("OAuth /refresh (Refresh Token) - Error States", () => {
 			cacheAccessToken: vi.fn(),
 			createAccessToken: vi.fn(),
 			createRefreshToken: vi.fn(),
-			deactivateToken: vi.fn(),
+			deactivateRefreshToken: vi.fn(),
 		};
 		consentRepositoryMock = {
 			getWaiverByUserIdAndClientId: vi.fn(),
@@ -216,7 +216,7 @@ describe("OAuth /refresh (Refresh Token) - Error States", () => {
 		tokenRepositoryMock.cacheAccessToken.mockResolvedValue(true);
 		tokenRepositoryMock.createAccessToken.mockResolvedValue(true);
 		tokenRepositoryMock.createRefreshToken.mockResolvedValue(true);
-		tokenRepositoryMock.deactivateToken.mockResolvedValue(false);
+		tokenRepositoryMock.deactivateRefreshToken.mockResolvedValue(false);
 
 		await expect(oAuthService.refreshToken(sampleRefreshTokenParams)).rejects.toThrow(ApplicationError);
 		await expect(oAuthService.refreshToken(sampleRefreshTokenParams)).rejects.toMatchObject({
