@@ -95,7 +95,7 @@ export const AuthorizeInput = z.object({
 	response_type:z.enum(["code"],{ error: "Invalid Response Type." }),
 	state:z.string({ error: "State must be a string" }),
 	challenge_method:z.enum(["S256"],{ error: "Invalid Challenge Method." }),
-	scopes:z.string().trim().transform((s)=> s.split(" ")).pipe(z.array(z.enum(["name", "email", "age", "gender", "dob", "avatar"], { error: "Invalid Scope." }))),
+	scope:z.string().trim().transform((s)=> s.split(" ")).pipe(z.array(z.enum(["name", "email", "age", "gender", "dob", "avatar"], { error: "Invalid Scope." }))),
 	code_challenge:z.string({ error: "Code Challenge must be a string" }).min(43, "Invalid Code Challenge.").max(128, "Invalid Code Challenge."),
 });
 

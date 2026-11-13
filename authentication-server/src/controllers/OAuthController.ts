@@ -46,7 +46,7 @@ export default class OAuthController {
 		try {
 			const status = AuthorizeInput.safeParse(req.query);
 			const validatedData = strictCheck(status.data, 400, status.error?.issues[0]?.message || "Invalid request data");
-			const {client_id:clientId, redirect_uri:redirectUri, response_type:responseType, state, challenge_method:challengeMethod, scopes:scope, code_challenge:codeChallenge } = validatedData;
+			const {client_id:clientId, redirect_uri:redirectUri, response_type:responseType, state, challenge_method:challengeMethod, scope:scope, code_challenge:codeChallenge } = validatedData;
 			const userId = strictCheck(req.user?.id, 500, "Internal Server Error");
 
 			const redirectUrl = await this.oAuthService.authorize({ clientId, redirectUri, responseType, state, challengeMethod, scope, codeChallenge, userId });
