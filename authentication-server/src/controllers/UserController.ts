@@ -90,13 +90,14 @@ export default class UserController {
 	 * Handle update user profile event
 	 *
 	 * Inorder Flow:
-	 * - validate and retrieve data, userId from socket
+	 * - validate entityType,data and retrieve data, userId from socket
 	 * - update user profile by userId and userDetails
 	 * - structure and send a response
 	 *
 	 */
 	async updateUserProfile(socket:AppSocket, data: unknown, callback:(response:StandardResponse) => void):Promise<void> {
 		try {
+			strictCheck(socket.data.entityType === "user", 400, "Unauthorized request");
 			const status = UpdateUserProfileInput.safeParse(data);
 			const validatedData = strictCheck(status.data, 400, status.error?.issues[0]?.message || "Invalid request data");
 			const userId = strictCheck(socket.data.entityId, 500, "Internal Server Error");
