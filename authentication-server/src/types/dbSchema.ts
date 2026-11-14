@@ -52,6 +52,7 @@ export interface Hardware {
 export interface Session{
     _id?:ObjectId | string;
 	sessionId:string;
+    sessionRef:string;
 	entityId:string;
     type:"user" | "organization";
 	email:string;

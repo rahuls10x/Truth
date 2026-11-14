@@ -128,4 +128,14 @@ export default class CryptoService {
     static generateSessionId(){
         return "session_" + crypto.randomBytes(32).toString('hex');
     }
+
+    /**
+     * Generate a random SessionRef
+     * 
+     * Inorder Flow: 
+     * - generate and return SessionRef (32 chars + prefix)
+     */
+    static generateSessionRef(){
+        return "sessionRef_" + crypto.randomBytes(16).toString('hex');
+    }
 }

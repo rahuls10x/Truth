@@ -24,14 +24,16 @@ export default class AuthService{
      * Creates a new session of given type
      * 
      * Inorder Flow:
-     * - Create Session object (sessionId is also created here)
+     * - Create Session object (sessionId, sessionRef is also created here)
      * - Create and verify session creation
      * - Return sessionId
      */
     private async createSession(type: "user" | "organization", entity:User | Organization, email:string, ip:string, hardware:Hardware): Promise<string> {
         const sessionId = CryptoService.generateSessionId();
+        const sessionRef = CryptoService.generateSessionRef();
         const sessionObject:Session = {
             sessionId,
+            sessionRef,
             entityId: type === 'user' ? ( entity as User).userId : ( entity as Organization).orgId,
             type,
             email,
