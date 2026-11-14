@@ -59,14 +59,6 @@ export const VerifyEmailInput = z.object({
 
 export type VerifyEmailRequest = z.infer<typeof VerifyEmailInput>;
 
-export const UpdateProfileInput = z.object({
-	name,
-	age: z.number({ error: "Age must be a number" }).min(13, "Invalid Age.").max(120, "Invalid Age."),
-	gender: z.enum(["Female", "Male", "Prefer not to say"], { error: "Invalid Gender." }),
-})
-
-export type UpdateProfileRequest = z.infer<typeof UpdateProfileInput>;
-
 export const CreateClientInput = z.object({
 	clientName: z.string({ message: "Name must be a string" }).min(2, "Invalid Name."),
 	responseType: z.enum(["code"], { message: "Invalid Response type." }),
@@ -117,3 +109,14 @@ export const RefreshTokenInput = z.object({
 });
 
 export type RefreshTokenRequest = z.infer<typeof RefreshTokenInput>;
+
+
+export const UpdateUserProfileInput = z.object({
+	name,
+	age:z.number({ error: "Age must be a number" }).min(13, "Invalid Age.").max(120, "Invalid Age."),
+	gender: z.enum(["Female", "Male", "Prefer not to say"], { error: "Invalid Gender." }),
+}).partial().refine(
+	(data) => Object.values(data).some(value => value !== undefined),{ message: "At least one field must be provided" }
+);
+
+export type UpdateUserProfileEvent = z.infer<typeof UpdateUserProfileInput>;

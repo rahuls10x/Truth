@@ -1,7 +1,9 @@
 import type { RequestHandler } from "express";
 import type UserService from "../services/UserService.js";
-import { errorHandling, strictCheck } from "../utils/ApplicationError.js";
-import { ForgotPasswordInput, UpdateProfileInput, UserSignupInput } from "../utils/ValidationSchema.js";
+import { errorHandling, socketErrorHandling, strictCheck } from "../utils/ApplicationError.js";
+import { ForgotPasswordInput, UpdateUserProfileInput, UserSignupInput } from "../utils/ValidationSchema.js";
+import type { AppSocket } from "../types/socketTypes.js";
+import type { StandardResponse } from "../types/index.js";
 
 export default class UserController {
 	private userService: UserService;
@@ -62,50 +64,57 @@ export default class UserController {
 	 * Handle get user profile request
 	 *
 	 * Inorder Flow:
-	 * - check and retrieve userId from request (Guarenteed to be present).
-	 * - retrieve a user profile DTO by userId
+	 * - check entityType and retrieve userId from socket.
+	 * - retrieve a user profile by userId
 	 * - structure and send a response
 	 *
 	 */
-	getProfile: RequestHandler = async (req, res) => {
+	async viewUserProfile(socket:AppSocket, callback: (response: StandardResponse) => void): Promise<void>{
 		try {
-			const userId = strictCheck(req.user?.id, 500, "Internal Server Error");
+			strictCheck(socket.data.entityType === "user", 400, "Unauthorized request");
+			const userId = strictCheck(socket.data.entityId, 500, "Internal Server Error")
 
-			const userProfileDTO = await this.userService.getProfile(userId);
+			const userProfile = await this.userService.getProfile(userId);
 
-			res.status(200).json({
-				success: true,
-				message: "Data has been retrieved successfully",
-				data: userProfileDTO,
+			callback({
+				success:true,
+				message:"Profile has been retrieved successfully",
+				data: userProfile
 			});
 		} catch (error) {
-			errorHandling(error, res);
+			socketErrorHandling(error,callback);
 		}
-	};
+	}
 
 	/**
-	 * Handle update user profile request
+	 * Handle update user profile event
 	 *
 	 * Inorder Flow:
-	 * - validate and retrieve data, userId from request
+	 * - validate and retrieve data, userId from socket
 	 * - update user profile by userId and userDetails
 	 * - structure and send a response
 	 *
 	 */
-	updateProfile: RequestHandler = async (req, res) => {
+	async updateUserProfile(socket:AppSocket, data: unknown, callback:(response:StandardResponse) => void):Promise<void> {
 		try {
-			const status = UpdateProfileInput.safeParse(req.body);
-			const validateData = strictCheck(status.data, 400, status.error?.issues[0]?.message || "Invalid request data");
-			const userId = strictCheck(req.user?.id, 500, "Internal Server Error");
+			const status = UpdateUserProfileInput.safeParse(data);
+			const validatedData = strictCheck(status.data, 400, status.error?.issues[0]?.message || "Invalid request data");
+			const userId = strictCheck(socket.data.entityId, 500, "Internal Server Error");
+			const roomId = strictCheck(socket.data.roomId, 500, "Internal Server Error");
 
-			await this.userService.updateProfile({userId,...validateData});
+			await this.userService.updateUserProfile(userId, validatedData);
 
-			res.status(200).json({
+			callback({
 				success: true,
 				message: "Data has been updated successfully",
 			});
+
+			socket.to(roomId).emit('userProfileUpdated', {
+				operation:'userProfileUpdated',
+				data:validatedData
+			});
 		} catch (err) {
-			errorHandling(err, res);
+			socketErrorHandling(err, callback);
 		}
-	};
+	}
 }

@@ -4,10 +4,15 @@ import type { Client, Session } from "@/types";
 import type { ProfileSchema, CreateClientSchema } from "@/types/validation";
 import { createContext, useContext, type ReactNode } from "react";
 import { useNotification } from "./NotificationContext";
+import useProfile from "@/hooks/useProfile";
+import { useAuth } from "./AuthContext";
 
 interface ApplicationContextType {
-	profile: () => Promise<ProfileSchema | void>;
-	updateProfile: (values: ProfileSchema) => Promise<boolean>;
+	profileMethods: {
+		userProfileDetails: ProfileSchema | null;
+		profile: () => Promise<void>;
+		updateProfile: (values: ProfileSchema) => Promise<void>;
+	}
 	clients: () => Promise<Client[] | void>;
 	createClient: (values: CreateClientSchema) => Promise<Client | null>;
 	sessions: () => Promise<Session[] | void>;
@@ -18,35 +23,10 @@ interface ApplicationContextType {
 const ApplicationContext = createContext<ApplicationContextType | undefined>(undefined);
 
 export function ApplicationProvider({ children }: { children: ReactNode }) {
-	const { getRequest, postRequest, putRequest, deleteRequest} = useApiService(import.meta.env.VITE_API_URL);
+	const { getRequest, postRequest, deleteRequest} = useApiService(import.meta.env.VITE_API_URL);
 	const { error, success } = useNotification();
-
-	async function profile(): Promise<ProfileSchema | void>{
-			const response = await getRequest(API_ROUTES.user.profile);
-			if(!response) return;
-
-			if (!response.success && response.error) {
-				error("Unable to load profile", response.error);
-				return;
-			}
-
-			return response.data as ProfileSchema;
-		};
-
-	async function updateProfile(values: ProfileSchema): Promise<boolean> {
-			const response = await putRequest(API_ROUTES.user.profile, values);
-			if (!response) return false;
-
-			if (response.success && response.message) {
-				success("Profile updated", response.message);
-				return true;
-			}
-
-			if (!response.success && response.error){
-				error("Unable to update profile", response.error );
-			}
-			return false;
-		};
+	const { changeUserName } = useAuth();
+	const profileMethods = useProfile(changeUserName);
 
 	async function clients(): Promise<Client[] | void>{
 			const response = await getRequest(API_ROUTES.organization.clients);
@@ -120,8 +100,7 @@ export function ApplicationProvider({ children }: { children: ReactNode }) {
 	}
 	
 	return <ApplicationContext.Provider value={{
-		profile,
-		updateProfile,
+		profileMethods,
 		clients,
 		createClient,
 		sessions,

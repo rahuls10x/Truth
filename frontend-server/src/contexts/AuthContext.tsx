@@ -16,6 +16,7 @@ interface AuthContextType {
 	isLoading: boolean;
 	isAuthenticated: boolean;
 	entity: AuthenticatedEntity | null;
+	changeUserName: (name:string) => void;
 	entityType: EntityType | null;
 	userSignup: (values: SignupSchema) => Promise<void>;
 	organizationSignup: (values: OrganizationSignupSchema) => Promise<void>;
@@ -47,6 +48,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 			beforeLogoutCallbacks.current.delete(callback);
 		};
 	}, []);
+
+	const changeUserName = useCallback((name:string):void =>{setEntity(prev => {
+		if(!prev) return null;
+		return {
+			...prev,
+			name
+		}
+	})}, [setEntity])
 
 	async function userSignup(values: SignupSchema): Promise<void> {
 		const response = await postRequest(API_ROUTES.user.signup, {
@@ -240,6 +249,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 				isLoading,
 				isAuthenticated,
 				entity,
+				changeUserName,
 				entityType,
 				userLogin,
 				organizationLogin,

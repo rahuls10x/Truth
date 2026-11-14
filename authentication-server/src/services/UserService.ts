@@ -1,10 +1,11 @@
 import type UserRepository from "../repositories/UserRepository.js";
-import type { ProfilePayload, UpdateProfileBody } from "../types/index.js";
+import type { ProfilePayload } from "../types/index.js";
 import { strictCheck } from "../utils/ApplicationError.js";
 import CryptoService from "./CryptoService.js";
 import type { User } from "../types/dbSchema.js";
 import type LinkService from "./LinkSevice.js";
 import type MailService from "./MailService.js";
+import type { UpdateUserProfileEvent } from "../utils/ValidationSchema.js";
 
 export default class UserService {
 	private userRepository:UserRepository;
@@ -68,7 +69,7 @@ export default class UserService {
 	}
 
 	/**
-	 * Provides User profile details DTO 
+	 * Provides User profile details
 	 * 
 	 * Inorder Flow:
 	 * - Get user details by id and check if user exists
@@ -79,7 +80,7 @@ export default class UserService {
 	 */
 	async getProfile(userId:string): Promise<ProfilePayload> {
 
-		const user = strictCheck(await this.userRepository.getUserById(userId), 400,  "User not found");
+		const user = strictCheck(await this.userRepository.getVerifiedUserById(userId), 400,  "User not found");
 
 		const profilePayload = {
 			name:user.name,
@@ -95,19 +96,18 @@ export default class UserService {
 	 * Update user profile details
 	 * 
 	 * Inorder Flow:
-	 * - Retrieve userId and update data from updateBody
+	 * - Retrieve update data from updateBody
 	 * - Update user details by userId
 	 * 
 	 * @remarks Overwrites existing user details
 	 */
-	async updateProfile(updateBody: UpdateProfileBody):Promise<void>{
+	async updateUserProfile(userId: string,updateBody: UpdateUserProfileEvent):Promise<void>{
 
-		const userId = updateBody.userId;
 		const updateData = {
-			name:updateBody.name,
-			age:updateBody.age,
-			gender:updateBody.gender
-		}
+			...(updateBody.name !== undefined && { name: updateBody.name }),
+			...(updateBody.age !== undefined && { age: updateBody.age }),
+			...(updateBody.gender !== undefined && { gender: updateBody.gender })
+		};
 
 		strictCheck(await this.userRepository.updateUserById(userId, updateData), 500, "Internal Server Error");
 	}

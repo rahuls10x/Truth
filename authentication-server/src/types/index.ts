@@ -34,13 +34,6 @@ export interface ProfilePayload {
 	gender: "Female" | "Male" | "Prefer not to say";
 }
 
-export interface UpdateProfileBody {
-	userId: string;
-	name: string;
-	age: number;
-	gender: "Female" | "Male" | "Prefer not to say";
-}
-
 //Organization Service
 
 export interface ClientPayload {
@@ -127,4 +120,11 @@ export interface SessionPayload {
 	expiresAt: Date;
 	ip: string;
 	isCurrent: boolean;
+}
+
+export interface StandardResponse{
+	success: boolean;
+	data?: any;
+	error?: string;
+	message?: string;
 }

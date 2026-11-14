@@ -25,8 +25,9 @@ function ProfileSkeleton() {
 }
 
 export function ProfilePage({ icon: Icon, text }: { icon: LucideIcon; text: string }) {
-	const [profileData, setProfileData] = useState<ProfileValues | undefined>(undefined);
-	const { profile, updateProfile } = useApplication();
+	const { profileMethods } = useApplication();
+	const { profile, updateProfile, userProfileDetails} = profileMethods;
+
 	const [isCreateOpen, setIsCreateOpen] = useState(false);
 	const {
 		register,
@@ -39,22 +40,12 @@ export function ProfilePage({ icon: Icon, text }: { icon: LucideIcon; text: stri
 		resolver: zodResolver(ProfileSchema),
 	});
 
-	async function handleUpdate(values: ProfileValues) {
-		if (await updateProfile(values)) {
-			setProfileData(values);
-			reset(values);
-		}
-	}
+	useEffect(()=>{
+		if(userProfileDetails) reset(userProfileDetails);
+	},[userProfileDetails]);
 
 	useEffect(() => {
-		async function fetchProfileDetails() {
-			const response = await profile();
-			if (response) {
-				setProfileData(response);
-				reset(response);
-			}
-		}
-		fetchProfileDetails();
+		profile();
 	}, []);
 
 	return (
@@ -73,10 +64,10 @@ export function ProfilePage({ icon: Icon, text }: { icon: LucideIcon; text: stri
 					<SheetDescription className="font-subheading text-sm">You can change you profile details here</SheetDescription>
 				</SheetHeader>
 
-				{!profileData && <ProfileSkeleton />}
+				{!userProfileDetails && <ProfileSkeleton />}
 
-				{profileData && (
-					<form onSubmit={handleSubmit(handleUpdate)} noValidate>
+				{userProfileDetails && (
+					<form onSubmit={handleSubmit(updateProfile)} noValidate>
 						<FieldGroup className="px-5">
 							<Field data-invalid={Boolean(errors.name)}>
 								<FieldLabel htmlFor="profile-name">Full name</FieldLabel>
@@ -150,7 +141,7 @@ export function ProfilePage({ icon: Icon, text }: { icon: LucideIcon; text: stri
 									{isSubmitting && <LoaderCircleIcon className="animate-spin" />}
 									Save changes
 								</Button>
-								<Button type="button" variant="outline" disabled={isSubmitting || !isDirty} onClick={() => reset(profileData)}>
+								<Button type="button" variant="outline" disabled={isSubmitting || !isDirty} onClick={() => reset(userProfileDetails)}>
 									Cancel
 								</Button>
 							</Field>

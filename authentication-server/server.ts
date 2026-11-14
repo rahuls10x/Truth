@@ -108,13 +108,10 @@ async function boot (){
 			console.log(`[WebSocket] Client connected: ${socket.id} (Session: ${socket.data.sessionId}) (Entity: ${socket.data.entityId})`);
 
 			JoinSocketRooms(socket);
-			SocketRoutes(socket);
+			SocketRoutes(socket, userController);
 		});
 
         // ------------- Routes ---------------
-        app.get("/user/profile", authMiddleware.checkUserAuthToken, userController.getProfile);
-        app.put("/user/profile", authMiddleware.checkUserAuthToken, userController.updateProfile);
-
         app.get("/org/clients", authMiddleware.checkOrganizationAuthToken, orgController.getClients);
         app.post("/org/clients", authMiddleware.checkOrganizationAuthToken, orgController.createClient);
 

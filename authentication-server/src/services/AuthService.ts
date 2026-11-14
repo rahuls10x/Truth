@@ -213,7 +213,7 @@ export default class AuthService{
     async whoAmI(entityId: string):Promise <IdentityPayload>{
         let entity;
         if(entityId.startsWith("user_")){
-            entity = strictCheck(await this.userRepository.getUserById(entityId), 404, "User does not exist");
+            entity = strictCheck(await this.userRepository.getVerifiedUserById(entityId), 404, "User does not exist");
         }
         if(entityId.startsWith("org_")){
             entity = strictCheck(await this.orgRepository.getOrganizationById(entityId), 404, "Organization does not exist");

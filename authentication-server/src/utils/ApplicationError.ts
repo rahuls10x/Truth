@@ -12,6 +12,7 @@ export default class ApplicationError extends Error {
 
     constructor(statusCode:number, message: string) {
         super(message);
+        this.name = "ApplicationError";
         this.statusCode = statusCode;
     }
 }
@@ -41,18 +42,20 @@ export function errorHandling(err: unknown, res: Response) {
         });
     }
 
+    const genericMessage = err instanceof Error ? err.message : "Internal Server Error";
+	console.error("[ServerError]:", err);
+
     if (err instanceof Error) {
         console.log(err);
         return res.status(500).json({
             success: false,
-            error: "Internal Server Error"
+            error:genericMessage
         });
     }
 
-    console.log(err);
     return res.status(500).json({
         success: false,
-        error: "Internal Server Error"
+        error: genericMessage
     });
 }
 /**
@@ -68,4 +71,35 @@ export function strictCheck<T>(value:T, code: number, message:string):NonNullabl
     }
 
     return value as NonNullable<T>;
+}
+
+/**
+ * Standardized socket error handling helper.
+ *
+ * Inorder Flow:
+ * - Check if error is an instance of ApplicationError
+ * - Execute callback with error response object if provided
+ * - Fallback to 500 Internal Server Error structure for unhandled exceptions
+ */
+export function socketErrorHandling(error: unknown, callback?: Function): void {
+	if (typeof callback !== "function") {
+		console.error("[SocketError]:", error);
+		return;
+	}
+
+	if (error instanceof ApplicationError) {
+		callback({
+			success: false,
+			error: error.message,
+		});
+		return;
+	}
+
+	const genericMessage = error instanceof Error ? error.message : "Internal Server Error";
+	console.error("[SocketServerError]:", error);
+
+	callback({
+		success: false,
+		error: genericMessage,
+	});
 }

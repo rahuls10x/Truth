@@ -44,3 +44,16 @@ export interface Session {
 	ip: string;
 	isCurrent: boolean;
 }
+
+export interface SocketStandardResponse<T = unknown> {
+	success: boolean;
+	message?: string;
+	data?: T;
+	error?: string;
+}
+
+export interface ProfileUpdateInput {
+	name?:string;
+	age?:number;
+	gender?:"Female" | "Male" | "Prefer not to say";
+}

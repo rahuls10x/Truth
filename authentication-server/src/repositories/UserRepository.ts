@@ -58,7 +58,7 @@ export default class UserRepository{
      * @remarks 
      * checks isVerified flag and only returns verified users
      */
-    async getUserById(userId:string): Promise<User | null> {
+    async getVerifiedUserById(userId:string): Promise<User | null> {
         return await this.db.collection<User>("users").findOne({ userId:userId, isVerified:true });
     }
 
