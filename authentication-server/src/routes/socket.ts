@@ -1,22 +1,39 @@
+import type AuthController from "../controllers/AuthController.js";
 import type UserController from "../controllers/UserController.js";
 import type { StandardResponse } from "../types/index.js";
 import type { AppSocket } from "../types/socketTypes.js";
 
-export function JoinSocketRooms(socket: AppSocket) {
-    const roomId = `room_${socket.data.entityId}`;
+export function createSocketRoomId(entityId:string | undefined):string{
+    return "room_" + entityId;
+}
+
+export function joinSocketRooms(socket: AppSocket) {
+    const roomId = createSocketRoomId(socket.data.entityId);
     socket.data.roomId = roomId;
 
     socket.join(roomId);
 }
 
-export function SocketRoutes(socket: AppSocket, userController:UserController) {
+export function socketRoutes(socket: AppSocket, userController:UserController, authController:AuthController) {
     socket.on("viewUserProfile", (callback:(response:StandardResponse) => void) => {
         userController.viewUserProfile(socket, callback);
     });
 
     socket.on("updateUserProfile", (data:unknown, callback:(response:StandardResponse) => void) =>{
         userController.updateUserProfile(socket, data, callback);
-    })
+    });
+
+    socket.on("viewActiveSessions",(callback:(response:StandardResponse)=> void)=> {
+        authController.getEntitySessions(socket, callback);
+    });
+
+    socket.on("revokeEntitySession", (data:unknown, callback:(response:StandardResponse)=> void)=> {
+        authController.revokeEntitySession(socket, data, callback );
+    });
+
+    socket.on("revokeAllEntitySessions", (callback:(response:StandardResponse)=> void)=> {
+        authController.revokeAllEntitySessions(socket, callback);
+    });
     
 	socket.on("disconnect", reason => {
 		console.log(`[WebSocket] Client disconnected: ${socket.id} (Reason: ${reason})`);

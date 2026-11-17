@@ -1,15 +1,21 @@
 import type { RequestHandler } from "express";
-import { errorHandling, strictCheck } from "../utils/ApplicationError.js";
+import { errorHandling, socketErrorHandling, strictCheck } from "../utils/ApplicationError.js";
 import type AuthService from "../services/AuthService.js";
 import DeviceDetector from "device-detector-js";
 import type { Hardware } from "../types/dbSchema.js";
-import { LoginInput, ResetPasswordInput, VerifyEmailInput } from "../utils/ValidationSchema.js";
+import { LoginInput, ResetPasswordInput, RevokeSessionInput, VerifyEmailInput } from "../utils/ValidationSchema.js";
+import type { AppSocket } from "../types/socketTypes.js";
+import type { StandardResponse } from "../types/index.js";
+import type { Server } from "socket.io";
+import { createSocketRoomId } from "../routes/socket.js";
 
 export default class AuthController {
+    private io: Server;
     private authService: AuthService;
     private deviceDetector: DeviceDetector;
 
-	constructor(authService: AuthService) {
+	constructor(io:Server, authService: AuthService) {
+        this.io = io;
         this.authService = authService
         this.deviceDetector = new DeviceDetector();
     }
@@ -85,70 +91,113 @@ export default class AuthController {
     }
 
     /**
-     * Handles get session Request
+     * Handles get sessions event
      * 
-     * Inorder Flow: 
-     * - Retrieve sessionId and Entity from request
-     * - Retrieve session data
-     * - structure and send response
+     * Inorder Flow:
+     * - Retrieve sessionId and entityId from socket
+     * - Retrieve all active sessions data
+     * - Structure and send response
      */
-    getSessions: RequestHandler = async (req, res) => {
+    async getEntitySessions(socket:AppSocket, callback:(response:StandardResponse) => void){
         try {
-            const sessionId = strictCheck(req.sessionId, 500, "Internal Server Error");
-            const entity = strictCheck(req.user ?? req.organization, 500, "Internal Server Error");
+            const sessionId = strictCheck(socket.data.sessionId, 500, "Internal Server Error");
+            const entityId = strictCheck(socket.data.entityId, 500, "Internal Server Error");
 
-            const sessionData = await this.authService.getSessions(sessionId, entity);
+            const sessions = await this.authService.getActiveEntitySessions(sessionId, entityId);
 
-            res.status(200).json({
-                success: true,
-                message: "Sessions have been retrieved successfully",
-                data:sessionData ?? []
+            callback({
+                success:true,
+                message:"Active Sessions has been retrieved successfully",
+                data: sessions
             });
-        } catch (error) {errorHandling(error, res);}
+        } catch (error) {
+            socketErrorHandling(error, callback);
+        }
     }
 
     /**
-     * Handles revoke session Request
+     * Handles revoke entity session event
      * 
-     * Inorder Flow: 
-     * - Retrieve and validate maskedId from request body
-     * - Revoke session by maskedId
-     * - structure and send response
+     * Inorder Flow:
+     * - Retrieve sessionId, entityId and validate sessionRef from socket
+     * - Revoke the entity session
+     * - Structure and send response
+     * - Update the active sessions of the revokation and disconnect the session if active
      */
-    revokeSession: RequestHandler = async (req, res) => {
+    async revokeEntitySession(socket:AppSocket, data:unknown, callback:(response:StandardResponse)=> void){
         try {
-            const { _id } = req.body;
-            strictCheck(_id, 400, "Invalid request data");
+            const sessionId = strictCheck(socket.data.sessionId, 500, "Internal Server Error");
+            const entityId = strictCheck(socket.data.entityId, 500, "Internal Server Error");
+            const status = RevokeSessionInput.safeParse(data);
+            const validatedData = strictCheck(status.data, 400, status.error?.issues[0]?.message || "Invalid Request data");
+            const roomId = strictCheck(socket.data.roomId, 500, "Internal Server Error");
 
-            await this.authService.revokeSession(_id);
+            const revokedSessionId = await this.authService.revokeEntitySession(sessionId, validatedData.sessionRef, entityId);
 
-            res.status(200).json({
-                success: true,
-                message: "Session has been revoked successfully"
+            callback({
+                success:true,
+                message:"Session has been revoked successfully"
             });
-        } catch (error) {errorHandling(error, res);}
+
+            const allActiveSockets = await this.io.in(roomId).fetchSockets();
+            for(const iteratedSocket of allActiveSockets){
+                if(iteratedSocket.data.sessionId === revokedSessionId) {
+                    iteratedSocket.emit("sessionUpdated", {
+                        operation:"logoutCurrent"
+                    });
+                    iteratedSocket.disconnect(true);
+                    continue;
+                };
+                iteratedSocket.emit("sessionUpdated",{
+                    operation:"sessionRevoked",
+                    data:validatedData
+                });
+            }
+
+        } catch (error) {
+            socketErrorHandling(error, callback);
+        }
     }
 
     /**
-     * Handles revoke all sessions Request
+     * Handles Revoke all entity sessions event
      * 
-     * Inorder Flow: 
-     * - Retrieve sessionId, entity from request
+     * Inorder Flow:
+     * - Retrieve sessionId, entityId, from socket
      * - Revoke all sessions
-     * - structure and send response
+     * - Structure and send response
+     * - Update the active sessions of the revokation and disconnect the session if active
      */
-    revokeAllSessions: RequestHandler = async (req, res) => {
+    async revokeAllEntitySessions(socket:AppSocket, callback:(response:StandardResponse) => void){
         try {
-            const sessionId = strictCheck(req.sessionId, 500, "Internal Server Error");
-            const entity = strictCheck(req.user ?? req.organization, 500, "Internal Server Error");
+            const sessionId = strictCheck(socket.data.sessionId, 500, "Internal Server Error");
+            const entityId = strictCheck(socket.data.entityId, 500, "Internal Server Error");
+            const roomId = strictCheck(socket.data.roomId, 500, "Internal Server Error");
 
-            await this.authService.revokeAllSessions(sessionId, entity.id);
+            await this.authService.revokeAllEntitySessions(sessionId, entityId);
 
-            res.status(200).json({
+            callback({
                 success: true,
                 message: "Sessions have been revoked successfully"
             });
-        } catch (error) {errorHandling(error, res);}
+
+            const allActiveSockets = await this.io.in(roomId).fetchSockets();
+            for(const iteratedSocket of allActiveSockets){
+                if(iteratedSocket.data.sessionId !== sessionId){
+                    iteratedSocket.emit("sessionUpdated",{
+                        operation:"logoutCurrent",
+                    });
+                    iteratedSocket.disconnect(true);
+                }else{
+                    iteratedSocket.emit("sessionUpdated",{
+                        operation:"allSessionsRevokedExceptCurrent"
+                    });
+                }
+            }
+
+        } catch (error) {
+            socketErrorHandling(error, callback);
+        }
     }
 
     /**
@@ -156,8 +205,9 @@ export default class AuthController {
      * 
      * Inorder Flow:
      * - validate data and retrieve ip, device information from request body, headers
-     * - retrive login Payload from login details
+     * - retrive login Payload, sessionPayload, sessionId, entityId from login
      * - set cookie with sessionId 
+     * - Create roomId and Update the active sessions of new addition
      * - structure and send response
      */
     userLogin: RequestHandler = async (req, res) => {
@@ -168,23 +218,26 @@ export default class AuthController {
             const userAgent = req.headers["user-agent"] as string;
             const hardware = this.deviceDetector.parse(userAgent) as Hardware;
 
-            const loginPayload = strictCheck(await this.authService.userLogin({...validatedData, ip, hardware}), 401, "Invalid Credentials");
+            const [loginPayload, sessionPayload, sessionId, entityId] = strictCheck(await this.authService.userLogin({...validatedData, ip, hardware}), 401, "Invalid Credentials");
 
-            res.cookie("authToken", loginPayload.sessionId, {
+            res.cookie("authToken", sessionId, {
                 httpOnly: true,
                 secure: false, // true in prod,
                 sameSite: "lax", // strict in prod,
                 maxAge: 4320 * 60 * 1000,
             });
 
+            const roomId = createSocketRoomId(entityId);
+            this.io.to(roomId).emit("sessionUpdated", {
+                operation:"newLogin",
+                data:sessionPayload
+            });
+
             res.status(200).json({
                 success: true,
                 message: "User has been logged Successfully",
-                data:{
-                    name:loginPayload.name,
-                    email:loginPayload.email
-                }
-            })
+                data:loginPayload
+            });
         } catch (error) {errorHandling(error, res);}
     }
 
@@ -193,8 +246,9 @@ export default class AuthController {
      * 
      * Inorder Flow:
      * - validate data and retrieve ip, device information from request body, headers
-     * - retrive login Payload from login details
+     * - retrive login Payload, sessionPayload, sessionId, entityId from login
      * - set cookie with sessionId 
+     * - Create roomId and Update the active sessions of new addition
      * - structure and send response
      */ 
     organizationLogin: RequestHandler = async (req, res) => {
@@ -205,23 +259,26 @@ export default class AuthController {
             const userAgent = req.headers["user-agent"] as string;
             const hardware = this.deviceDetector.parse(userAgent) as Hardware;
 
-            const loginPayload = strictCheck(await this.authService.organizationLogin({...validatedData, ip, hardware}), 401, "Invalid Credentials");
+            const [loginPayload, sessionPayload, sessionId, entityId] = strictCheck(await this.authService.organizationLogin({...validatedData, ip, hardware}), 401, "Invalid Credentials");
 
-            res.cookie("authToken", loginPayload.sessionId, {
+            res.cookie("authToken", sessionId, {
                 httpOnly: true,
                 secure: false, // true in prod,
                 sameSite: "lax", // strict in prod,
                 maxAge: 4320 * 60 * 1000,
             });
 
+            const roomId = createSocketRoomId(entityId);
+            this.io.to(roomId).emit("sessionUpdated", {
+                operation:"newLogin",
+                data:sessionPayload
+            });
+
             res.status(200).json({
                 success: true,
                 message: "Organization has been logged Successfully",
-                data:{
-                    name:loginPayload.name,
-                    email:loginPayload.email
-                }
-            })
+                data:loginPayload
+            });
         } catch (error) {errorHandling(error, res);}
     }
 
@@ -231,22 +288,39 @@ export default class AuthController {
      * Inorder Flow:
      * - retrive current sessionId from request session (Guarenteed to be present)
      * - revoke the current session
-     * - set cookie with sessionId 
+     * - clear cookie
+     * - Create roomId and Update the active sessions of new deletion
      * - structure and send response
      */
     logout: RequestHandler = async (req, res) => {
         try {
-
             const sessionId = strictCheck(req.sessionId, 500, "Internal Server Error");
+            const entityId = strictCheck(req.user?.id ?? req.organization?.id, 500, "Internal Server Error");
 
-            await this.authService.logout(sessionId);
+            const revokedSessionRef = await this.authService.logout(sessionId);
             
             res.clearCookie("authToken");
+
+            const roomId = createSocketRoomId(entityId);
+            const allActiveSockets = await this.io.in(roomId).fetchSockets();
+            for(const iteratedSocket of allActiveSockets){
+                if(iteratedSocket.data.sessionId === sessionId) {
+                    iteratedSocket.emit("sessionUpdated", {
+                        operation:"logoutCurrent"
+                    });
+                    iteratedSocket.disconnect(true);
+                    continue;
+                };
+                iteratedSocket.emit("sessionUpdated",{
+                    operation:"sessionRevoked",
+                    data:{sessionRef: revokedSessionRef}
+                });
+            };
             
             res.status(200).json({
                 success: true,
                 message: "User has been logged out Successfully",
-            })
+            });
         } catch (error) {errorHandling(error, res);}
     }
 }

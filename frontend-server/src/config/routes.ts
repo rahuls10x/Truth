@@ -29,9 +29,6 @@ export const API_ROUTES = {
 	verifyEmail: "/verifyEmail",
 	resetPassword: "/resetPassword",
 	authorize: "/authorize",
-	session: "/sessions",
-	revokeSession:"/revokeSession",
-	revokeAllSessions:"/revokeAllSessions",
 	user:{
 		login: "/user/login",
 		signup: "/user/signup",

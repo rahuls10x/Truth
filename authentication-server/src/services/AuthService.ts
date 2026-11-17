@@ -26,9 +26,10 @@ export default class AuthService{
      * Inorder Flow:
      * - Create Session object (sessionId, sessionRef is also created here)
      * - Create and verify session creation
-     * - Return sessionId
+     * - Create session Payload for sessions concurrency update
+     * - Return sessionId ,session payload and entityId
      */
-    private async createSession(type: "user" | "organization", entity:User | Organization, email:string, ip:string, hardware:Hardware): Promise<string> {
+    private async createSession(type: "user" | "organization", entity:User | Organization, email:string, ip:string, hardware:Hardware): Promise<[string, SessionPayload, string]> {
         const sessionId = CryptoService.generateSessionId();
         const sessionRef = CryptoService.generateSessionRef();
         const sessionObject:Session = {
@@ -46,7 +47,16 @@ export default class AuthService{
 
         strictCheck(await this.sessionRepository.createSession(sessionObject), 500, "Internal Server Error");
 
-        return sessionId;
+        const sessionPayload: SessionPayload = {
+            sessionRef,
+            hardware,
+            ip,
+            createdAt:sessionObject.createdAt,
+            expiresAt:sessionObject.expiresAt,
+            isCurrent:false
+        }
+
+        return [sessionId, sessionPayload, sessionObject.entityId];
     }
 
     /**
@@ -54,21 +64,17 @@ export default class AuthService{
      * 
      * Inorder Flow:
      * - Get user details by email and check if user exists also verify password
-     * - Retrieve sessionId and generate session
-     * - Return login payload
+     * - Retrieve sessionId, sessionPayload, entityId and generate session
+     * - Return login payload, sessionPayload, sessionId and entityId
      */
-    async userLogin({email, password, ip, hardware}:{email:string, password:string, ip:string, hardware:Hardware}): Promise<LoginPayload> {
+    async userLogin({email, password, ip, hardware}:{email:string, password:string, ip:string, hardware:Hardware}): Promise<[LoginPayload, SessionPayload, string, string]> {
         
         const user = strictCheck(await this.userRepository.getUserByEmail(email), 404, "User does not exist");
         strictCheck(await CryptoService.verifyhashedPassword(password, user.password), 401, "Invalid Credentials");
 
-        const sessionId = await this.createSession("user", user, email, ip, hardware);
+        const [sessionId, sessionPayload, entityId] = await this.createSession("user", user, email, ip, hardware);
 
-        return {
-            name: user.name,
-            email: user.email,
-            sessionId
-        };
+        return [{ name: user.name, email: user.email }, sessionPayload, sessionId, entityId];
     }
 
     /**
@@ -76,21 +82,17 @@ export default class AuthService{
      * 
      * Inorder Flow:
      * - Get organization details by email and check if organization exists also verify password
-     * - Retrieve sessionId and generate session
-     * - Return login payload
+     * - Retrieve sessionId, sessionPayload, entityId and generate session
+     * - Return login payload, sessionPayload, sessionId and entityId
      */
-    async organizationLogin({email, password, ip, hardware}:{email:string, password:string, ip:string, hardware:Hardware}): Promise<LoginPayload> {
+    async organizationLogin({email, password, ip, hardware}:{email:string, password:string, ip:string, hardware:Hardware}): Promise<[LoginPayload, SessionPayload, string, string]> {
         
         const organization = strictCheck(await this.orgRepository.getOrganizationByEmail(email), 404, "Organization does not exist");
         strictCheck(await CryptoService.verifyhashedPassword(password, organization.password), 401, "Invalid Credentials");
 
-        const sessionId = await this.createSession("organization", organization, email, ip, hardware);
+        const [sessionId, sessionPayload, entityId] = await this.createSession("organization", organization, email, ip, hardware);
 
-        return {
-            name: organization.userName,
-            email: organization.email,
-            sessionId
-        };
+        return [{ name: organization.userName, email: organization.email }, sessionPayload, sessionId, entityId];
     }
 
     /**
@@ -99,15 +101,15 @@ export default class AuthService{
      * Inorder Flow:
      * - Retrieve all sessions for entity id
      * - model the session into session Payload
-     * - return the session payload else undefined
+     * - return the session payload
      */
-    async getSessions(currentSessionId:string, entity:{id:string, email:string}): Promise<SessionPayload[] | undefined>{
-        const sessions = await this.sessionRepository.findAllActiveSessionsByEntityId(entity.id);
+    async getActiveEntitySessions(currentSessionId:string, entityId:string):Promise<SessionPayload[]>{
+        const sessions = await this.sessionRepository.findAllActiveSessionsByEntityId(entityId);
 
         const sessionPayload = [];
         for(const session of sessions){
             sessionPayload.push({
-                _id:session._id as string,
+                sessionRef:session.sessionRef,
                 hardware: session.hardware,
                 expiresAt: session.expiresAt,
                 createdAt:session.createdAt,
@@ -116,26 +118,36 @@ export default class AuthService{
             });
         }
 
-        return sessionPayload.length > 0 ? sessionPayload : undefined;
+        return sessionPayload;
     }
 
     /**
-     * Revokes the session by maskedId(_id)
+     * Revokes the session by sessionRef and returns the revokedSessionId
      * 
      * Inorder Flow:
-     * - Revokes the session
+     * - Finds the session with given sessionRef
+     * - Checks if it is the current sessionId and it belongs to user
+     * - Revokes the sessionId
+     * - Returns the revokes sessionId
      */
-    async revokeSession(maskedId:string): Promise<void> {
-        strictCheck(await this.sessionRepository.revokeSessionByMaskedId(maskedId), 500, "Internal Server Error");
+    async revokeEntitySession(currentSessionId:string, revokeSessionRef:string, entityId:string):Promise<string>{
+        const revokedSession = strictCheck(await this.sessionRepository.findActiveSessionByReference(revokeSessionRef), 400, "Session not found or already revoked");
+
+        strictCheck(revokedSession.sessionId !== currentSessionId, 400, "Cannot revoke active session");
+        strictCheck(revokedSession.entityId === entityId, 404, "Unauthorized action");
+
+        strictCheck(await this.sessionRepository.revokeSessionById(revokedSession.sessionId), 500, "Failed to revoke session");
+
+        return revokedSession.sessionId;
     }
 
     /**
      * Revokes all sessions except current session
      * 
      * Inorder Flow:
-     * - Revokes all sessions
+     * - Revokes all entity sessions
      */
-    async revokeAllSessions(currentSessionId:string, entityId:string): Promise<void> {
+    async revokeAllEntitySessions(currentSessionId:string, entityId:string): Promise<void>{
         strictCheck(await this.sessionRepository.revokeAllSessionsExceptCurrent(currentSessionId, entityId), 500, "Internal Server Error");
     }
 
@@ -195,13 +207,19 @@ export default class AuthService{
     }
 
     /**
-     * Logouts the entity
+     * Logouts the entity and returns the revokes sessionRef
      * 
      * Inorder Flow:
+     * - Retrieve the session
      * - Revoke current session
+     * - Return the session Ref
      */
-    async logout(sessionId: string): Promise<void> {
+    async logout(sessionId: string): Promise<string> {
+        const session = strictCheck(await this.sessionRepository.findActiveSessionById(sessionId), 500, "Internal Server Error");
+
         strictCheck(await this.sessionRepository.revokeSessionById(sessionId), 500, "Internal Server Error");
+
+        return session.sessionRef;
     }
 
     /**

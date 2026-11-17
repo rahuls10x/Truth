@@ -98,7 +98,6 @@ export interface RefreshTokenParams {
 export interface LoginPayload {
 	name: string;
 	email: string;
-	sessionId: string;
 }
 
 export interface IdentityPayload {
@@ -114,7 +113,7 @@ export interface LinkPayload {
 }
 
 export interface SessionPayload {
-	_id: string;
+	sessionRef: string;
 	hardware: Hardware;
 	createdAt: Date;
 	expiresAt: Date;

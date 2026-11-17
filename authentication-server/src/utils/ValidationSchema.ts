@@ -120,3 +120,9 @@ export const UpdateUserProfileInput = z.object({
 );
 
 export type UpdateUserProfileEvent = z.infer<typeof UpdateUserProfileInput>;
+
+export const RevokeSessionInput = z.object({
+	sessionRef:z.string().startsWith("sessionRef_",{error:"Session Reference must be valid"})
+})
+
+export type RevokeSessionEvent = z.infer<typeof RevokeSessionInput>;

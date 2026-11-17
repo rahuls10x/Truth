@@ -5,7 +5,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { APP_ROUTES } from "@/config/routes";
 import { useApplication } from "@/contexts/ApplicationContext";
 import { formatRelativeTime } from "@/lib/utils";
-import type { Session } from "@/types";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 
@@ -46,38 +45,25 @@ export function NotFoundPage() {
 }
 
 export function SessionPage() {
-	const [sessionsData, setSessionsData] = useState<Session[] | undefined>(undefined);
-	const { sessions, revokeSession, revokeAllSessions } = useApplication();
+	const { sessionMethods } = useApplication();
+	const { sessionsData, sessions, revokeSession, revokeAllSessions } = sessionMethods;
 	const [isLoadingId, setIsLoadingId] = useState<boolean | string>(false);
 
-	async function handleRevokeSession(_id: string) {
-		setIsLoadingId(_id);
-		const status = await revokeSession(_id);
-		if (status) {
-			setSessionsData(prev => (prev || []).filter(session => session._id !== _id));
-		}
+	async function handleRevokeSession(sessionRef: string) {
+		setIsLoadingId(sessionRef);
+		await revokeSession(sessionRef);
 		setIsLoadingId(false);
 	}
 
 	async function handleRevokeAllSessions() {
 		setIsLoadingId(true);
-		const status = await revokeAllSessions();
-		if (status) {
-			setSessionsData(prev => (prev || []).filter(session => session.isCurrent));
-		}
+		await revokeAllSessions();
 		setIsLoadingId(false);
 	}
 
 	useEffect(() => {
-		async function fetchSessions() {
-			const response = await sessions();
-			if (response) {
-				setSessionsData(response);
-			}
-		}
-
-		fetchSessions();
-	}, []);
+		sessions();
+	}, [sessions]);
 	return (
 		<section className="space-y-5">
 			<div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
@@ -101,7 +87,7 @@ export function SessionPage() {
 			{sessionsData && sessionsData.length > 0 && (
 				<div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
 					{sessionsData.map(session => (
-						<Card key={session._id} className="bg-background drop-shadow-accent drop-shadow-xs hover:drop-shadow-sm">
+						<Card key={session.sessionRef} className="bg-background drop-shadow-accent drop-shadow-xs hover:drop-shadow-sm">
 							<CardHeader>
 								<CardTitle className="flex">
 									{session.hardware.client.name ?? "Unknown"} {session.isCurrent && <Badge className="ml-2">Active</Badge>}
@@ -125,12 +111,12 @@ export function SessionPage() {
 							<CardFooter>
 								<Button
 									variant={session.isCurrent ? "ghost" : "default"}
-									disabled={session.isCurrent || isLoadingId === session._id || isLoadingId === true}
-									onClick={() => handleRevokeSession(session._id)}
+									disabled={session.isCurrent || isLoadingId === session.sessionRef || isLoadingId === true}
+									onClick={() => handleRevokeSession(session.sessionRef)}
 								>
 									{session.isCurrent && "Active"} 
-									{!session.isCurrent && (isLoadingId !== session._id && isLoadingId !== true) && "Revoke"}
-									{(isLoadingId === session._id || isLoadingId === true) && !session.isCurrent && "Revoking..." }
+									{!session.isCurrent && (isLoadingId !== session.sessionRef && isLoadingId !== true) && "Revoke"}
+									{(isLoadingId === session.sessionRef || isLoadingId === true) && !session.isCurrent && "Revoking..." }
 								</Button>
 							</CardFooter>
 						</Card>

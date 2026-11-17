@@ -37,7 +37,7 @@ interface Hardware {
 }
 
 export interface Session {
-	_id: string;
+	sessionRef: string;
 	hardware: Hardware;
 	createdAt: Date;
 	expiresAt: Date;
@@ -57,3 +57,9 @@ export interface ProfileUpdateInput {
 	age?:number;
 	gender?:"Female" | "Male" | "Prefer not to say";
 }
+
+export type SessionUpdateEventResponses = 
+	{ operation: "newLogin";	data: Session;} | 
+	{ operation: "logoutCurrent"; } | 
+	{ operation: "sessionRevoked"; data: { sessionRef: string;};} |
+	{ operation: "allSessionsRevokedExceptCurrent"};

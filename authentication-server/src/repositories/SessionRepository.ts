@@ -1,4 +1,4 @@
-import { ObjectId, type Db } from "mongodb";
+import { type Db } from "mongodb";
 import type { Session } from "../types/dbSchema.js";
 
 export default class SessionRepository{
@@ -113,23 +113,21 @@ export default class SessionRepository{
     }
 
     /**
-     * Revoke a session by MaskedId(_id) 
+     * Retrieves the session by sessionRef
      * 
      * Inorder Flow:
-     * - Revokes the session
+     * -Retrieves and returns the session
      * 
      * @remarks
-     * does not check if session is already revoked (negligible security risk)
+     * checks if session is already revoked or expired
      */
-    async revokeSessionByMaskedId(_id: string):Promise <boolean>{
-        const result = await this.db.collection<Session>("sessions").updateOne({ 
-            _id: new ObjectId(_id),
-        }, {
-            $set: {
-                isRevoked: true,
-            }
+    async findActiveSessionByReference(sessionRef:string): Promise<Session | null>{
+        const result = await this.db.collection<Session>("sessions").findOne({ 
+            sessionRef,
+            isRevoked:false,
+            expiresAt:{$gt:new Date()}
         });
-        return result.modifiedCount === 1;
+        return result;
     }
 
     /**

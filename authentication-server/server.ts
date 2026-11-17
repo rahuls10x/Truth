@@ -27,7 +27,7 @@ import MailService from "./src/services/MailService.js";
 import LinkService from "./src/services/LinkSevice.js";
 import { Server } from "socket.io";
 import type { AppSocket } from "./src/types/socketTypes.js";
-import { JoinSocketRooms, SocketRoutes } from "./src/routes/socket.js";
+import { joinSocketRooms, socketRoutes } from "./src/routes/socket.js";
 
 // ------------- Configuration ---------------
 config({ path: ".env" });
@@ -39,10 +39,10 @@ const app = express();
 // Wrap Express in HTTP server to share the TCP listener and port with Socket.io
 const httpServer = http.createServer(app);
 const socketIo = new Server(httpServer, {
-	cors: {
-		origin: originUrl,
-		credentials: true,
-	},
+    cors: {
+        origin: originUrl,
+        credentials: true,
+    },
 });
 
 app.use(express.json());
@@ -73,6 +73,7 @@ async function boot (){
         await createUniqueIndex(mongoDb, 'users', 'email');
         await createUniqueIndex(mongoDb, 'organizations', 'email');
         await createUniqueIndex(mongoDb, 'sessions', 'sessionId');
+        await createUniqueIndex(mongoDb, 'sessions', 'sessionRef');
         await createUniqueIndex(mongoDb, 'applications', 'clientId');
         await createUniqueIndex(mongoDb, 'accessTokens', 'tokenString');
         await createUniqueIndex(mongoDb, 'refreshTokens', 'tokenString');
@@ -94,7 +95,7 @@ async function boot (){
         const orgService = new OrganizationService(orgRepository, clientRepository, linkService, mailService);
         const oAuthService = new OAuthService(clientRepository, tokenRepository, consentRepository);
 
-        const authController = new AuthController(authService);
+        const authController = new AuthController(socketIo, authService);
         const userController = new UserController(userService);
         const orgController = new OrganizationController(orgService);
         const oAuthController = new OAuthController(oAuthService);
@@ -107,8 +108,8 @@ async function boot (){
 		socketIo.on("connection", (socket: AppSocket) => {
 			console.log(`[WebSocket] Client connected: ${socket.id} (Session: ${socket.data.sessionId}) (Entity: ${socket.data.entityId})`);
 
-			JoinSocketRooms(socket);
-			SocketRoutes(socket, userController);
+			joinSocketRooms(socket);
+			socketRoutes(socket, userController, authController);
 		});
 
         // ------------- Routes ---------------
@@ -123,10 +124,6 @@ async function boot (){
 
         app.post("/user/forgotPassword", userController.forgotPassword);
         app.post("/org/forgotPassword", orgController.forgotPassword);
-
-        app.get("/sessions", authMiddleware.checkAuthToken, authController.getSessions);
-        app.delete("/revokeSession", authMiddleware.checkAuthToken, authController.revokeSession);
-        app.delete("/revokeAllSessions", authMiddleware.checkAuthToken, authController.revokeAllSessions);
 
         app.put("/verifyEmail/:magicToken", authController.verifyEmail);
 
