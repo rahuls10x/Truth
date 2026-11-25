@@ -38,7 +38,6 @@ export const API_ROUTES = {
 	organization: {
 		login: "/org/login",
 		signup: "/org/signup",
-		clients: "/org/clients",
 		forgotPassword: "/org/forgotPassword"
 	},
 };

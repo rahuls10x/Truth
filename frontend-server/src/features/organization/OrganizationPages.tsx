@@ -21,11 +21,10 @@ function formatCreatedAt(value: string): string {
 	return Number.isNaN(date.getTime()) ? "Unknown date" : new Intl.DateTimeFormat(undefined, { dateStyle: "medium" }).format(date);
 }
 
-export default function ClientsPage() {
-	const [clientData, setClientData] = useState<Client[] | undefined>(undefined);
-	const [isCreateOpen, setIsCreateOpen] = useState(false);
-	const { clients, createClient } = useApplication();
-	const { success, error } = useNotification();
+function CreateClientSheet({ trigger }: { trigger: ReactElement }) {
+	const [isOpen, setIsOpen] = useState(false);
+	const { clientMethods } = useApplication();
+	const { createClient } = clientMethods;
 	const {
 		register,
 		reset,
@@ -37,6 +36,105 @@ export default function ClientsPage() {
 		resolver: zodResolver(CreateClientSchema),
 	});
 
+	async function handleCreateNewClient(values: CreateClientValues) {
+		const createdClient = await createClient(values);
+
+		if (createdClient) {
+			reset();
+			setIsOpen(false);
+		}
+	}
+
+	return (
+		<Sheet open={isOpen} onOpenChange={setIsOpen}>
+			<SheetTrigger asChild>{trigger}</SheetTrigger>
+			<SheetContent className="overflow-y-auto" showCloseButton={false}>
+				<form onSubmit={handleSubmit(handleCreateNewClient)} noValidate>
+					<SheetHeader>
+						<SheetTitle>Create OAuth client</SheetTitle>
+						<SheetDescription>Register the callback and data scopes required by your application.</SheetDescription>
+					</SheetHeader>
+					<FieldGroup className="px-4">
+						<Field data-invalid={Boolean(errors.clientName)}>
+							<FieldLabel htmlFor="new-client-name">Client name</FieldLabel>
+							<Input
+								id="new-client-name"
+								placeholder="My application"
+								aria-invalid={Boolean(errors.clientName)}
+								{...register("clientName")}
+							/>
+							<FieldError>{errors.clientName?.message}</FieldError>
+						</Field>
+						<Field data-invalid={Boolean(errors.redirectUri)}>
+							<FieldLabel htmlFor="new-client-redirect">Redirect URI</FieldLabel>
+							<Input
+								id="new-client-redirect"
+								type="url"
+								placeholder="https://example.com/callback"
+								aria-invalid={Boolean(errors.redirectUri)}
+								{...register("redirectUri")}
+							/>
+							<FieldError>{errors.redirectUri?.message}</FieldError>
+						</Field>
+						<Field data-invalid={Boolean(errors.responseType)}>
+							<FieldLabel htmlFor="new-client-response-type">Response type</FieldLabel>
+							<Controller
+								name="responseType"
+								control={control}
+								render={({ field }) => (
+									<Select value={field.value} onValueChange={field.onChange}>
+										<SelectTrigger id="new-client-response-type" className="w-full">
+											<SelectValue />
+										</SelectTrigger>
+										<SelectContent>
+											<SelectGroup>
+												<SelectLabel>Response types</SelectLabel>
+												<SelectItem value="code">Authorization code</SelectItem>
+											</SelectGroup>
+										</SelectContent>
+									</Select>
+								)}
+							/>
+							<FieldError>{errors.responseType?.message}</FieldError>
+						</Field>
+						<Field data-invalid={Boolean(errors.scopes)}>
+							<FieldLabel htmlFor="new-client-scopes">Scopes</FieldLabel>
+							<Input
+								id="new-client-scopes"
+								placeholder="name email"
+								aria-invalid={Boolean(errors.scopes)}
+								{...register("scopes", {
+									setValueAs: (value: string) => {
+										return (value.length > 0 && typeof value === "string" ? value.trim().split(" ").filter(Boolean) : [])
+									},
+								})}
+							/>
+							<p className="text-xs text-muted-foreground">Separate scopes with spaces.</p>
+							<FieldError>{errors.scopes?.message}</FieldError>
+						</Field>
+					</FieldGroup>
+					<SheetFooter>
+						<Button type="submit" disabled={isSubmitting}>
+							{isSubmitting && <LoaderCircleIcon className="animate-spin" />}
+							Create client
+						</Button>
+						<SheetClose asChild>
+							<Button type="button" variant="outline" disabled={isSubmitting}>
+								Cancel
+							</Button>
+						</SheetClose>
+					</SheetFooter>
+				</form>
+			</SheetContent>
+		</Sheet>
+	);
+}
+
+//handles the sheet to view existing client details
+function ClientDetails({ client, trigger }: { client: Client; trigger: ReactElement }) {
+	const idPrefix = `client-${client.clientId}`;
+	const { success, error } = useNotification();
+
 	async function copyToClipboard(text: string) {
 		try {
 			await navigator.clipboard.writeText(text);
@@ -46,168 +144,64 @@ export default function ClientsPage() {
 		}
 	}
 
-	async function handleCreateNewClient(values: CreateClientValues) {
-		const createdClient = await createClient(values);
+	return (
+		<Sheet>
+			<SheetTrigger asChild>{trigger}</SheetTrigger>
+			<SheetContent className="overflow-y-auto" showCloseButton={false}>
+				<SheetHeader>
+					<SheetTitle>Client details</SheetTitle>
+					<SheetDescription>Credentials and authorization settings for {client.clientName}.</SheetDescription>
+				</SheetHeader>
+				<div className="grid gap-5 px-4">
+					<Field>
+						<FieldLabel htmlFor={`${idPrefix}-name`}>Name</FieldLabel>
+						<Input id={`${idPrefix}-name`} value={client.clientName} readOnly />
+					</Field>
+					<Field>
+						<FieldLabel htmlFor={`${idPrefix}-id`}>Client ID</FieldLabel>
+						<Input id={`${idPrefix}-id`} value={client.clientId} readOnly />
+					</Field>
+					<Field>
+						<FieldLabel htmlFor={`${idPrefix}-redirect`}>Redirect URI</FieldLabel>
+						<Input id={`${idPrefix}-redirect`} value={client.redirectUri} readOnly />
+					</Field>
+					<Field>
+						<FieldLabel htmlFor={`${idPrefix}-secret`}>Client secret</FieldLabel>
+						<InputGroup>
+							<InputGroupInput id={`${idPrefix}-secret`} value={client.clientSecret} type="password" readOnly />
+							<InputGroupAddon align={"inline-end"} onClick={() => copyToClipboard(client.clientSecret)}>
+								<Copy />
+							</InputGroupAddon>
+						</InputGroup>
+					</Field>
+					<Field>
+						<FieldLabel>Scopes</FieldLabel>
+						<div className="flex flex-wrap gap-1">
+							{client.scopes.map(scope => (
+								<Badge variant={'secondary'} key={scope}>{scope}</Badge>
+							))}
+						</div>
+					</Field>
+				</div>
+				<SheetFooter>
+					<SheetClose asChild>
+						<Button type="button" variant="outline">
+							Close
+						</Button>
+					</SheetClose>
+				</SheetFooter>
+			</SheetContent>
+		</Sheet>
+	);
+}
 
-		if (createdClient) {
-			setClientData(current => [...(current ?? []), createdClient]);
-			reset();
-			setIsCreateOpen(false);
-		}
-	}
+export default function ClientsPage() {
+	const { clientMethods } = useApplication();
+	const { clientData, getClients } = clientMethods;
 
 	useEffect(() => {
-		async function fetchClients() {
-			const response = await clients();
-			if (response) {
-				setClientData(response);
-			}
-		}
-
-		fetchClients();
-	}, []);
-
-	//handles the sheet when creating new client
-	function CreateClientSheet({ trigger }: { trigger: ReactElement }) {
-		return (
-			<Sheet open={isCreateOpen} onOpenChange={setIsCreateOpen}>
-				<SheetTrigger asChild>{trigger}</SheetTrigger>
-				<SheetContent className="overflow-y-auto" showCloseButton={false}>
-					<form onSubmit={handleSubmit(handleCreateNewClient)} noValidate>
-						<SheetHeader>
-							<SheetTitle>Create OAuth client</SheetTitle>
-							<SheetDescription>Register the callback and data scopes required by your application.</SheetDescription>
-						</SheetHeader>
-						<FieldGroup className="px-4">
-							<Field data-invalid={Boolean(errors.clientName)}>
-								<FieldLabel htmlFor="new-client-name">Client name</FieldLabel>
-								<Input
-									id="new-client-name"
-									placeholder="My application"
-									aria-invalid={Boolean(errors.clientName)}
-									{...register("clientName")}
-								/>
-								<FieldError>{errors.clientName?.message}</FieldError>
-							</Field>
-							<Field data-invalid={Boolean(errors.redirectUri)}>
-								<FieldLabel htmlFor="new-client-redirect">Redirect URI</FieldLabel>
-								<Input
-									id="new-client-redirect"
-									type="url"
-									placeholder="https://example.com/callback"
-									aria-invalid={Boolean(errors.redirectUri)}
-									{...register("redirectUri")}
-								/>
-								<FieldError>{errors.redirectUri?.message}</FieldError>
-							</Field>
-							<Field data-invalid={Boolean(errors.responseType)}>
-								<FieldLabel htmlFor="new-client-response-type">Response type</FieldLabel>
-								<Controller
-									name="responseType"
-									control={control}
-									render={({ field }) => (
-										<Select value={field.value} onValueChange={field.onChange}>
-											<SelectTrigger id="new-client-response-type" className="w-full">
-												<SelectValue />
-											</SelectTrigger>
-											<SelectContent>
-												<SelectGroup>
-													<SelectLabel>Response types</SelectLabel>
-													<SelectItem value="code">Authorization code</SelectItem>
-												</SelectGroup>
-											</SelectContent>
-										</Select>
-									)}
-								/>
-								<FieldError>{errors.responseType?.message}</FieldError>
-							</Field>
-							<Field data-invalid={Boolean(errors.scopes)}>
-								<FieldLabel htmlFor="new-client-scopes">Scopes</FieldLabel>
-								<Input
-									id="new-client-scopes"
-									placeholder="name email"
-									aria-invalid={Boolean(errors.scopes)}
-									{...register("scopes", {
-										setValueAs: (value: string) => {
-											return (value.length > 0 && typeof value === "string" ? value.trim().split(" ").filter(Boolean) : [])
-										},
-									})}
-								/>
-								<p className="text-xs text-muted-foreground">Separate scopes with spaces.</p>
-								<FieldError>{errors.scopes?.message}</FieldError>
-							</Field>
-						</FieldGroup>
-						<SheetFooter>
-							<Button type="submit" disabled={isSubmitting}>
-								{isSubmitting && <LoaderCircleIcon className="animate-spin" />}
-								Create client
-							</Button>
-							<SheetClose asChild>
-								<Button type="button" variant="outline" disabled={isSubmitting}>
-									Cancel
-								</Button>
-							</SheetClose>
-						</SheetFooter>
-					</form>
-				</SheetContent>
-			</Sheet>
-		);
-	}
-
-	//handles the sheet to view existing client details
-	function ClientDetails({ client, trigger }: { client: Client; trigger: ReactElement }) {
-		const idPrefix = `client-${client.clientId}`;
-
-		return (
-			<Sheet>
-				<SheetTrigger asChild>{trigger}</SheetTrigger>
-				<SheetContent className="overflow-y-auto" showCloseButton={false}>
-					<SheetHeader>
-						<SheetTitle>Client details</SheetTitle>
-						<SheetDescription>Credentials and authorization settings for {client.clientName}.</SheetDescription>
-					</SheetHeader>
-					<div className="grid gap-5 px-4">
-						<Field>
-							<FieldLabel htmlFor={`${idPrefix}-name`}>Name</FieldLabel>
-							<Input id={`${idPrefix}-name`} value={client.clientName} readOnly />
-						</Field>
-						<Field>
-							<FieldLabel htmlFor={`${idPrefix}-id`}>Client ID</FieldLabel>
-							<Input id={`${idPrefix}-id`} value={client.clientId} readOnly />
-						</Field>
-						<Field>
-							<FieldLabel htmlFor={`${idPrefix}-redirect`}>Redirect URI</FieldLabel>
-							<Input id={`${idPrefix}-redirect`} value={client.redirectUri} readOnly />
-						</Field>
-						<Field>
-							<FieldLabel htmlFor={`${idPrefix}-secret`}>Client secret</FieldLabel>
-							<InputGroup>
-								<InputGroupInput id={`${idPrefix}-secret`} value={client.clientSecret} type="password" readOnly />
-								<InputGroupAddon align={"inline-end"} onClick={() => copyToClipboard(client.clientSecret)}>
-									<Copy />
-								</InputGroupAddon>
-							</InputGroup>
-						</Field>
-						<Field>
-							<FieldLabel>Scopes</FieldLabel>
-							<div className="flex flex-wrap gap-1">
-								{client.scopes.map(scope => (
-									<Badge variant={'secondary'} key={scope}>{scope}</Badge>
-								))}
-							</div>
-						</Field>
-					</div>
-					<SheetFooter>
-						<SheetClose asChild>
-							<Button type="button" variant="outline">
-								Close
-							</Button>
-						</SheetClose>
-					</SheetFooter>
-				</SheetContent>
-			</Sheet>
-		);
-	}
+		getClients();
+	}, [getClients]);
 
 	return (
 		<section className="space-y-5">

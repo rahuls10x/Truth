@@ -63,3 +63,8 @@ export type SessionUpdateEventResponses =
 	{ operation: "logoutCurrent"; } | 
 	{ operation: "sessionRevoked"; data: { sessionRef: string;};} |
 	{ operation: "allSessionsRevokedExceptCurrent"};
+
+export type ClientUpdateEventResponses = {
+	operation: "clientAdded";
+	data: Client;
+};

@@ -1,7 +1,9 @@
 import type { RequestHandler } from "express";
 import type OrganizationService from "../services/OrganizationService.js";
-import { errorHandling, strictCheck } from "../utils/ApplicationError.js";
+import { errorHandling, socketErrorHandling, strictCheck } from "../utils/ApplicationError.js";
 import { CreateClientInput, ForgotPasswordInput, OrgSignupInput } from "../utils/ValidationSchema.js";
+import type { AppSocket } from "../types/socketTypes.js";
+import type { StandardResponse } from "../types/index.js";
 
 export default class OrganizationController {
 	private orgService: OrganizationService;
@@ -58,52 +60,63 @@ export default class OrganizationController {
 	};
 
 	/**
-	 * Handles get clients request
+	 * Handles get clients event
 	 * 
 	 * Inorder Flow: 
-	 * - check and retrieve orgId from request (Guarenteed to be present).
-	 * - retrieve clients list by orgId
-	 * - structure and send response
+	 * - Check entityType and retrieve orgId from socket
+	 * - Retrieve clients list by orgId
+	 * - Structure and send response
 	 */
-	getClients: RequestHandler = async (req, res) => {
+	async getClients(socket: AppSocket, callback: (response: StandardResponse) => void): Promise<void> {
 		try {
-			const orgId = strictCheck(req.organization?.id, 500, "Internal Server Error");
+			strictCheck(socket.data.entityType === "organization", 400, "Unauthorized request");
+			const orgId = strictCheck(socket.data.entityId, 500, "Internal Server Error");
 
 			const clients = await this.orgService.getClients(orgId);
 
-			res.status(200).json({
+			callback({
 				success: true,
 				message: "Clients have been retrieved Successfully",
 				data: clients,
 			});
 		} catch (error) {
-			errorHandling(error, res);
+			socketErrorHandling(error, callback);
 		}
-	};
+	}
 
 	/**
-	 * Handles create Client request
+	 * Handles create client event
 	 * 
 	 * Inorder Flow: 
-	 * - validate and retrieve data, orgId from request body
-	 * - create and retrieve client
-	 * - structure and send response
+	 * - Check entityType and validate input data from socket
+	 * - Retrieve orgId and roomId from socket
+	 * - Create client by orgId and validatedData
+	 * - Structure and send response in callback
+	 * - Broadcast clientAdded update to room
 	 */
-	createClient: RequestHandler = async (req, res) => {
+	async createClient(socket: AppSocket, data: unknown, callback: (response: StandardResponse) => void): Promise<void> {
 		try {
-			const status = CreateClientInput.safeParse(req.body);
+			strictCheck(socket.data.entityType === "organization", 400, "Unauthorized request");
+			const status = CreateClientInput.safeParse(data);
 			const validatedData = strictCheck(status.data, 400, status.error?.issues[0]?.message || "Invalid request data");
-			const orgId = strictCheck(req.organization?.id, 500, "Internal Server Error");
+
+			const orgId = strictCheck(socket.data.entityId, 500, "Internal Server Error");
+			const roomId = strictCheck(socket.data.roomId, 500, "Internal Server Error");
 
 			const client = await this.orgService.createClient(orgId, validatedData);
 
-			res.status(200).json({
+			callback({
 				success: true,
 				message: "Client has been created Successfully",
 				data: client,
 			});
+
+			socket.to(roomId).emit("clientUpdated", {
+				operation: "clientAdded",
+				data: client,
+			});
 		} catch (error) {
-			errorHandling(error, res);
+			socketErrorHandling(error, callback);
 		}
-	};
+	}
 }

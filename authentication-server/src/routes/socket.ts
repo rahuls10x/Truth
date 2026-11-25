@@ -1,5 +1,6 @@
 import type AuthController from "../controllers/AuthController.js";
 import type UserController from "../controllers/UserController.js";
+import type OrganizationController from "../controllers/OrganizationController.js";
 import type { StandardResponse } from "../types/index.js";
 import type { AppSocket } from "../types/socketTypes.js";
 
@@ -14,7 +15,7 @@ export function joinSocketRooms(socket: AppSocket) {
     socket.join(roomId);
 }
 
-export function socketRoutes(socket: AppSocket, userController:UserController, authController:AuthController) {
+export function socketRoutes(socket: AppSocket, userController:UserController, authController:AuthController, orgController:OrganizationController) {
     socket.on("viewUserProfile", (callback:(response:StandardResponse) => void) => {
         userController.viewUserProfile(socket, callback);
     });
@@ -33,6 +34,14 @@ export function socketRoutes(socket: AppSocket, userController:UserController, a
 
     socket.on("revokeAllEntitySessions", (callback:(response:StandardResponse)=> void)=> {
         authController.revokeAllEntitySessions(socket, callback);
+    });
+
+    socket.on("getClients", (callback:(response:StandardResponse)=> void)=> {
+        orgController.getClients(socket, callback);
+    });
+
+    socket.on("createClient", (data: unknown, callback: (response: StandardResponse) => void) => {
+        orgController.createClient(socket, data, callback);
     });
     
 	socket.on("disconnect", reason => {
